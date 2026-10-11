@@ -10,7 +10,8 @@
  * 只做验签，不签发会话。
  *
  * 逻辑：
- *   - SGX_SITE 不是 'blog'（未配置）：直接放行，保证未配置前站点行为不变。
+ *   - SGX_SITE 不是 'blog'（未配置或配错）：fail closed，302 到主站锁屏
+ *     （why=no-config），绝不静默放行。缺配置拒绝请求。
  *   - 白名单路径（静态资源、robots.txt 等）：直接放行。
  *   - Cookie 有效（验签通过、未过期、epoch >= 主站最新 epoch）：放行。
  *   - 其他：一律 302 到主站锁屏 https://styrigx.com/?lock=1&return=<原地址>。
@@ -210,9 +211,10 @@ export async function onRequest(context) {
     });
   }
 
-  /* 未配置为 blog 站点时直接放行（配置前行为不变） */
+  /* SGX_SITE 未配置或不是 'blog'：fail closed（缺配置锁站），记日志，绝不静默放行 */
   if (!env || env.SGX_SITE !== 'blog') {
-    return next();
+    console.error('[blog-lock] SGX_SITE not configured or mismatch, fail closed');
+    return lockRedirect(url, 'no-config');
   }
 
   /* 白名单路径直接放行 */
