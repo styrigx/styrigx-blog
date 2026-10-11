@@ -13,15 +13,17 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Assert no legacy key names
         run: |
-          if grep -rn "SGX_ED25519_\|SGX_STEPUP_KEY" --include="*.js" --include="*.ts" --include="*.mjs" functions/ 2>/dev/null; then
-            echo "ERROR: Legacy key names found. Use SGX_LOCK_* per key spec v1.0."
+          # 禁止旧变量名 SGX_ED25519_*（已改名为 SGX_LOCK_*）；不扫描 .github/ 避免自匹配
+          if grep -rn "SGX_ED25519_" --include="*.js" --include="*.ts" --include="*.mjs" functions/ 2>/dev/null; then
+            echo "ERROR: Found SGX_ED25519_* (use SGX_LOCK_* per key spec v1.0)."
             exit 1
           fi
           echo "OK: no legacy key names."
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
