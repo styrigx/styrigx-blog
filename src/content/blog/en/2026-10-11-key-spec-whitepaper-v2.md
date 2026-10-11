@@ -18,7 +18,7 @@ v1.0 isolated three credential types with three Ed25519 key pairs, but sensitive
 | App domain (APP) | `SGX_APP_*` | Logins on ordinary websites | Specific operations on sub-sites (book upload, delete, cover change) |
 | Main-site domain (STEPUP) | `SGX_STEPUP_*` | "Verify identity before changing" in system settings | Only the main site's Security & Privacy core settings |
 
-Six core principles:
+Seven core principles:
 
 1. **One key pair per purpose**, never reused across purposes.
 2. **Only the main site issues**; sub-sites only hold public keys. The main-site key's public and private parts stay on the main site.
@@ -26,6 +26,7 @@ Six core principles:
 4. **Passkey classification**: lock-type and app-type passkeys are registered and verified separately; the server rejects mixing in both directions.
 5. **Missing configuration means rejection** (fail closed); nothing degrades into access.
 6. **All credentials expire and are revocable**: the session epoch invalidates every credential at once; the app epoch invalidates one app's credentials independently.
+7. **The management key is the root recovery credential**: `OWNER_KEY` (UI label "Management key (recovery)") works even while locked and can issue an owner session and `sgx-stepup`, but never `sgx-app`.
 
 **This document supersedes v1.0, which is retained as a historical version.**
 
@@ -33,7 +34,7 @@ Six core principles:
 
 | Role | Description |
 |---|---|
-| Main site (space) | The sole issuer; holds all private keys and the main-site public key; handles unlock, step-up, APP verification, and passkey management |
+| Main site (space) | The sole issuer; holds all private keys, the main-site public key, and the management key `OWNER_KEY`; handles unlock, step-up, APP verification, passkey management, and management-key recovery |
 | Sub-site (blog, book, etc.) | Verifies only, never issues; holds only the public keys it needs |
 | Owner | The only person who can manage security settings and perform sensitive operations |
 | Visitor | Enters via human verification; can browse public content and some read-only pages; all sensitive operations are rejected |
@@ -64,6 +65,8 @@ SGX_<PURPOSE>_PUBLIC    public key (SPKI PEM)
 Local filenames are `<purpose>.key` and `<purpose>.pub`. Names express purpose, not algorithm; the algorithm is uniformly Ed25519.
 
 Three fixed names: **lock key, APP key, main-site key**. "Step-up" remains only as the name of an action ("perform a step-up"), no longer referring to a key.
+
+Exception: the management key keeps the variable name `OWNER_KEY` and the endpoint `/api/owner-auth`; neither is renamed. It is not a signing key pair but a recovery secret held only in a main-site Secret; the UI calls it "Management key (recovery)".
 
 ## 4. Three Signing Key Pairs
 
@@ -125,7 +128,7 @@ Signing keys answer "who signed this credential"; passkeys (WebAuthn) answer "wh
 - Lock-screen auth challenges **must** list only `class=lock` credentials, and the server **must** re-check the class at verification. Rationale: the browser's credential picker is not a security boundary — filtering only on the frontend can be bypassed with a crafted request.
 - APP auth challenges **must** list only `class=app` credentials whose `aud` equals the requested `aud`; the server re-checks as well. Book's key cannot open music.
 - Authentication **must** require user verification (UV — biometrics or PIN); challenges are isolated per purpose, single-use, and expire after 5 minutes.
-- **Passwords must never** be exchanged for `sgx-stepup` or `sgx-app`. Passwords only unlock.
+- **Passwords must never** be exchanged for `sgx-stepup` or `sgx-app`; passwords only unlock. The management key may be exchanged for `sgx-stepup` (see 6.8) but **must never** be exchanged for `sgx-app`.
 
 ### 5.2 Fixed Names at Registration
 
@@ -161,13 +164,14 @@ This section follows the user's actual journey, step by step, from opening a sit
 1. Choose "Verify to enter" and complete Cloudflare Turnstile human verification.
 2. The main site's `/api/verify` re-checks the result with Cloudflare, then issues `sgx-verified` with `role=visitor`, valid 1 hour.
 3. Visitors can access: the desktop and apps, the blog, the book library's public content, Settings and its sub-pages, the Security & Privacy overview, My Files, and "Lock now" (current device only).
-4. Visitors **cannot** access: password changes and lock-screen passkey management, app verification management, session management, locking all devices, or any of the corresponding APIs — those APIs return `403` to visitors across the board.
+4. Visitors **cannot** access: password changes and lock-screen passkey management, app verification management, locking all devices, or the corresponding management APIs, which return `403` to visitors. The only exception is the auth actions needed for in-place upgrade (`verify` on `owner-password`; `challenge` and `auth` on `owner-passkey`): middleware lets them through and the endpoint checks them itself. `register` also reaches the endpoint, which requires an owner session and returns `401`.
 
 ### 6.3 Owner Unlock
 
 1. Choose "Passkey": complete WebAuthn with a lock-class passkey. Or choose "Password": submit the owner password.
 2. On success the main site issues `sgx-verified` with `role=owner`, valid 12 hours; no further verification is needed on any of the three sites during that window.
 3. Password verification **must** be rate-limited: 5 consecutive failures from one IP lock it for 30 seconds. Passwords are stored with PBKDF2-SHA256 and a random salt, compared in constant time. Passkey unlock is not subject to the password rate limit — nobody can lock the owner out by burning through failure counts.
+4. If neither works (forgotten password, all lock-class passkeys lost), recover with the management key (recovery); see 6.8.
 
 ### 6.4 Visitor In-Place Upgrade
 
@@ -182,21 +186,20 @@ These operations require an owner session plus a valid `sgx-stepup`:
 
 - adding/removing lock-class passkeys;
 - adding/removing app-class passkeys;
-- changing or deleting the password;
-- session management.
+- setting, changing, or deleting the password.
 
 The flow:
 
 1. An unlocked owner initiates one of these without a valid `sgx-stepup` → the API returns `stepup-required`.
-2. The frontend pops a passkey verification that **only accepts lock-class** keys, with UV enforced.
+2. The frontend opens verification: a lock-class passkey (**lock-class only**, UV enforced) or the management key (recovery); with no lock-class passkey registered, only the management key is shown.
 3. On success the main site signs an `sgx-stepup` with the main-site private key (10 minutes); the frontend automatically retries the original operation.
 4. After a successful password change, password deletion, or any passkey deletion, `sgx-stepup` is cleared immediately.
 
 Exceptions, each with its reason:
 
-- **First lock-class passkey**: with no lock-class passkey yet, an owner session alone may register — otherwise the first key could never be added.
+- **No exception for the first lock-class passkey**: registering any passkey requires an owner session plus `sgx-stepup`. With no lock-class passkey yet, verify with the management key first (it issues both an owner session and `sgx-stepup`), then register the first one. Anonymous registration is not possible even when no lock-class passkey exists (fixed in 2.10.1).
 - **Lock all devices**: an emergency button that only reduces privilege; no extra gate, except visitors are excluded.
-- **App-class passkeys have no exception**: registering one always requires `sgx-stepup`, which means a lock-class passkey must exist first.
+- **App-class passkeys have no exception**: registering one always requires an owner session plus `sgx-stepup`, which comes from a lock-class passkey or the management key.
 - **The last owner unlock method cannot be deleted**: with no password set, the final lock-class passkey cannot be removed.
 
 ### 6.6 Sub-Site Sensitive Operations (APP — book upload as example)
@@ -217,26 +220,39 @@ Exceptions, each with its reason:
 
 Multi-tab sync **must not** rely on BroadcastChannel, localStorage, or frontend memory. Each tab re-checks its session with the server on `visibilitychange`, `pageshow`, and `focus`. Rationale: tabs across subdomains share no reliable frontend channel — the server is the single source of truth.
 
+### 6.8 Management Key (Recovery)
+
+`OWNER_KEY` is the root recovery credential, used to regain control after forgetting the password or losing every lock-class passkey.
+
+1. `POST /api/owner-auth { key }`: callable while locked (it is on the middleware whitelist); POST only, Origin checked, constant-time comparison.
+2. On success it issues both an owner session (`sgx-verified`, 12 hours, equivalent to password or passkey unlock) and `sgx-stepup` (10 minutes, bound to the current session epoch).
+3. With those two cookies the owner can reset or delete the password, add or delete lock-class passkeys, and add or delete book's app-class passkeys.
+4. It **never** issues `sgx-app`: `/api/app-token` only accepts the single-use record left by app-class passkey auth and never reads `OWNER_KEY`; a CI static test enforces this.
+5. Failure rate limits: 5 consecutive failures from one IP lock it for 15 minutes; 20 failures site-wide within an hour pause verification for 1 hour; over the limit returns `429`. Any KV error while reading or writing the counters is a rejection (`503`).
+6. Every use (success, failure, or rate-limited) writes an audit record `owner-auth-audit:<ts>:<rand>` to KV with only the time, IP prefix, and outcome, kept for 7 days.
+7. Missing `OWNER_KEY`, `SGX_LOCK_PRIVATE`, or `SGX_STEPUP_PRIVATE` means rejection (500 or 503).
+8. After changing the management key, redeploy the main site for it to take effect.
+
 ## 7. Storage and Configuration
 
 ### 7.1 Per-Site Variables
 
 | Project | Variables |
 |---|---|
-| Main site | `SGX_LOCK_PRIVATE`, `SGX_APP_PRIVATE`, `SGX_STEPUP_PRIVATE`, `SGX_LOCK_PUBLIC`, `SGX_STEPUP_PUBLIC` |
-| blog | `SGX_LOCK_PUBLIC` |
-| book | `SGX_LOCK_PUBLIC`, `SGX_APP_PUBLIC` |
+| Main site | `SGX_LOCK_PRIVATE`, `SGX_APP_PRIVATE`, `SGX_STEPUP_PRIVATE`, `SGX_LOCK_PUBLIC`, `SGX_STEPUP_PUBLIC`, `SGX_APP_PUBLIC` (only for the `/api/diag-keys` self-check), `OWNER_KEY`, `SGX_SITE=space` |
+| blog | `SGX_LOCK_PUBLIC`, `SGX_SITE=blog` |
+| book | `SGX_LOCK_PUBLIC`, `SGX_APP_PUBLIC`, `SGX_SITE=book` |
 | Future sub-sites | `SGX_LOCK_PUBLIC`, `SGX_SITE`; add `SGX_APP_PUBLIC` and join the app whitelist when sensitive operations are needed |
 
 ### 7.2 Rules
 
 - Private keys **must** be configured as Secrets. Public keys aren't secret — Text (visible in the console, easy to compare) or Secret both work; when a project's plaintext variables are managed by `wrangler.toml` and the console only allows adding Secrets, use Secret. Either way, public keys **must never** be committed to the repo or `wrangler.toml` — production has exactly one source of truth.
-- Sub-sites **must not** contain any `*_PRIVATE` or any `SGX_STEPUP_*`. CI statically checks sub-site sources; any occurrence fails the build.
-- The main site's `/api/app-token` chain **must not** reference the main-site key; `sgx-stepup` verification is only allowed in security-settings endpoints. Also CI-checked.
+- Sub-sites **must not** contain any `*_PRIVATE`, any `SGX_STEPUP_*`, or `OWNER_KEY`; they hold public keys only. CI statically checks sub-site sources; any occurrence fails the build. A missing or wrong `SGX_SITE` fails closed: blog always redirects to the main-site lock screen, book always returns `500`.
+- The main site's `/api/app-token` chain **must not** reference the main-site key or `OWNER_KEY`; `sgx-stepup` verification is only allowed in the `owner-passkey`, `owner-password`, and `stepup` endpoints. Enforced by static tests in CI.
 - All three sites can compare lock public-key fingerprints (first 16 hex chars of SHA-256) via the main site's `/api/key-fingerprint` and each site's same-named endpoint — only the public-key hash is exposed.
 - Keep a copy of each private key in a password manager, filed under "lock key / APP key / main-site key".
 - Production and preview environments use completely separate keys; CI generates throwaway pairs every run.
-- Every Pages project with functions **must** set over-quota behavior to **Fail closed**. Rationale: with Fail open, requests bypass functions and serve static assets directly once the free quota is exhausted — equivalent to bypassing the lock screen.
+- Every Pages project with functions **must** set over-quota behavior to **Fail closed**. Rationale: with Fail open, requests bypass functions and serve static assets directly once the free quota is exhausted — equivalent to bypassing the lock screen. All three projects (space, blog, book) are set to Fail closed.
 
 Generation:
 
@@ -251,8 +267,8 @@ The main site keeps two kinds of monotonically increasing integers in KV:
 
 | Epoch | KV key | Incremented when | Invalidates |
 |---|---|---|---|
-| Session epoch | `session-epoch` | lock all devices, password change, password deletion | all three credential types |
-| App epoch | `app-epoch:<aud>` | deleting any app-class passkey for that app | that app's `sgx-app` and in-flight upload tasks |
+| Session epoch | `session-epoch` | lock all devices, setting or changing the password, password deletion, deleting a lock-class passkey | all three credential types |
+| App epoch | `app-epoch:<aud>` | deleting any app-class passkey for that app (advances only the app epoch, not the session epoch) | that app's `sgx-app` and in-flight upload tasks |
 
 Why a separate app epoch instead of reusing the session epoch: deleting book's key should only invalidate book's passes — not lock every device. Per-app separation also keeps deleting book's key from affecting music's future passes.
 
@@ -265,7 +281,11 @@ Sub-sites fetch the latest values from the main site's `/api/session-epoch` (ret
 | Missing lock public key | pages go to lock screen, APIs 401, only whitelisted paths pass |
 | Missing any private key | refuse to issue the corresponding credential, return 500, no downgrade |
 | Missing APP public key | all sub-site sensitive operations 403 |
-| Missing main-site public or private key | security settings 403 or 500 across the board; lock screen and APP verification unaffected |
+| Missing main-site public or private key | security settings 403 or 500 across the board, and management-key recovery is refused (500); lock-screen unlock and APP verification unaffected |
+| Missing `OWNER_KEY` | `/api/owner-auth` returns 500 |
+| KV error on management-key rate-limit counters | 503, rejected |
+| Sub-site `SGX_SITE` missing or wrong | blog redirects to lock screen, book returns 500 |
+| Unauthenticated call to `/api/diag-keys` | 401 |
 | Epoch unreachable with no cache | reject |
 | KV read error | 503, no writes |
 | Bad signature, expired, stale epoch, aud/scope mismatch, role not owner | reject |
@@ -287,7 +307,9 @@ There is no "unconfigured means allow" switch anywhere, and tests never pass by 
 
 **Emergency rotation** (suspected private-key leak): run steps 1–4 immediately — rotate first, investigate after. Only rotate the affected pair; leave the other two alone.
 
-**Lost passkey** (lost device): unlock with another device or the password → perform one step-up → delete the passkey on the lost device (after deleting a lock-class key, locking all devices is recommended; deleting an app-class key automatically advances the app epoch).
+**Lost passkey** (lost device): unlock with another device or the password → perform one step-up → delete the passkey on the lost device (deleting a lock-class key automatically advances the session epoch, so every device must unlock again; deleting an app-class key advances only that app's epoch). If every unlock method is lost, enter with the management key (recovery), then reset the password or register a new lock-class passkey.
+
+**Management-key rotation**: replace `OWNER_KEY` in the main-site Secret and redeploy the main site. Credentials already issued are unaffected; to invalidate them too, lock all devices afterwards.
 
 ## 11. Acceptance Criteria
 
@@ -297,8 +319,11 @@ Every change touching keys or auth **must** ship with CI-integrated functional t
 - Expired, epoch-changed, tampered, forged-signature, and visitor credentials are all rejected.
 - Cross-purpose rejection: `sgx-verified` can't stand in for `sgx-app` or `sgx-stepup`; `sgx-stepup` can't stand in for `sgx-app`; aud/scope mismatches rejected.
 - Passkey classification: lock-class rejected at `/app-verify/`; app-class rejected at the lock screen; an `aud=book` credential rejected for `aud=music`; registering a non-whitelisted `aud` returns 400.
-- Decoupling: an app-class passkey can still mint `sgx-app` with no `sgx-stepup`; adding/removing either passkey class without `sgx-stepup` returns 403.
+- Decoupling: an app-class passkey can still mint `sgx-app` with no `sgx-stepup`; registering either passkey class without an owner session returns 401 (including when no lock-class passkey exists); adding/removing either class without `sgx-stepup` returns 403.
 - Revocation: after deleting an app-class passkey, the old `sgx-app` returns 403 on the sub-site, and in-flight uploads are rejected.
+- Management key: correct → owner session plus `sgx-stepup`; wrong → 401 and counted; over the limit → 429; missing `OWNER_KEY` or `SGX_STEPUP_PRIVATE` → rejected; KV errors fail closed; every use writes an audit record; `/api/app-token` never references `OWNER_KEY`.
+- Deleting an app-class passkey advances only `app-epoch:<aud>`, never the session epoch.
+- Self-check: `/api/diag-keys` returns 401 when unauthenticated; matched pairs return true, mismatched false, missing "missing".
 - Registration parameters: `user.displayName` is the owner's name; `user.name` is `lock` and the corresponding `aud`.
 - Visitor scope: visitors can open Settings, the security overview, and My Files, and can lock now; owner-only paths redirect at most once and land on the upgrade sheet; owner-only APIs return 403 to visitors.
 - Cross-site contract: an `sgx-verified` issued by the main site parses on every sub-site.
@@ -315,9 +340,10 @@ The merge bar is a fully green production CI. Fix the implementation — **never
 | 2 | Session roles (owner / visitor) | Done |
 | 3 | Main-site key: issuance, verification, wired into main-site sensitive operations | Done |
 | 4 | APP key with book upload (v1.0 approach via main-site step-up) | Done, superseded by phase 6 |
-| 5 | Visitor scope narrowing and in-place upgrade | In progress |
-| 6 | Three-domain split: passkey classification, independent APP verification, app epoch | Planned |
-| 7 | CI key-distribution checks | Planned |
+| 5 | Visitor scope narrowing and in-place upgrade | Done |
+| 6 | Three-domain split: passkey classification, independent APP verification, app epoch | Done (2.10.0) |
+| 7 | CI key-distribution checks | Done (2.10.0) |
+| 8 | Management key as root recovery credential, anonymous registration closed, key self-check `/api/diag-keys` | Done (2.10.1) |
 
 ## Appendix
 
@@ -336,22 +362,23 @@ The merge bar is a fully green production CI. Fix the implementation — **never
 | Endpoint | Purpose | Visitor |
 |---|---|---|
 | `/api/verify` | Turnstile re-check, issues visitor session | allowed |
-| `/api/owner-auth` | management-key gate (initial setup), issues 5-minute management token | needs management key |
+| `/api/owner-auth` | management key (recovery): works while locked, issues owner session plus `sgx-stepup` (10 min), never `sgx-app`; rate-limited on failure, every use audited | allowed (needs management key) |
 | `/api/lock` | lock now (current device) | allowed |
 | `/api/session-check` | multi-tab session re-check | allowed |
 | `/api/session-epoch` | session epoch and app epochs | public |
 | `/api/key-fingerprint` | lock public-key fingerprint | public |
 | `/api/stepup` | lock-class passkey exchanged for `sgx-stepup` | 403 |
 | `/api/owner-password` | `verify` unlocks with password; `set`/`change`/`remove` manage the password (needs `sgx-stepup`) | only `verify` allowed (for upgrade) |
-| `/api/owner-passkey` | `auth` unlocks with lock-class passkey; register, list, rename, delete (needs `sgx-stepup`) | only `auth` allowed (for upgrade) |
+| `/api/owner-passkey` | `auth` unlocks with lock-class passkey; register, list, rename, delete (needs `sgx-stepup`) | only `challenge` and `auth` allowed (for upgrade) |
 | `/api/lock-all-devices` | lock all devices | 403 |
 | `/api/app-token` | app-class passkey exchanged for `sgx-app` | 403 |
+| `/api/diag-keys` | key-pair self-check for all three pairs, returns only true / false / "missing" | 401 (owner session only) |
 
 ### C. Changelog
 
 | Version | Date | Notes |
 |---|---|---|
-| v2.0 | 2026-10-11 | Trust model changed to three non-nested domains; APP verification no longer goes through main-site step-up, and the main-site key only governs security settings with its key pair staying on the main site; passkeys split into lock and app classes, one key per app, server rejects mixing both ways; fixed naming for registration; new app epoch — deleting an app-class passkey invalidates that app's credentials; `sgx-app` format gains the app epoch, cookie changed to `SameSite=Lax` with rationale; public keys may be Text or Secret but never enter the repo; new complete auth flow (visitor entry, owner unlock, in-place upgrade, security settings, sub-site operations, lock sync); new Pages Fail-closed requirement, CI key-distribution checks, API reference; expanded acceptance criteria. |
+| v2.0 | 2026-10-11 | Trust model changed to three non-nested domains; APP verification no longer goes through main-site step-up, and the main-site key only governs security settings with its key pair staying on the main site; passkeys split into lock and app classes, one key per app, server rejects mixing both ways; fixed naming for registration; new app epoch — deleting an app-class passkey invalidates that app's credentials; `sgx-app` format gains the app epoch, cookie changed to `SameSite=Lax` with rationale; public keys may be Text or Secret but never enter the repo; new complete auth flow (visitor entry, owner unlock, in-place upgrade, security settings, sub-site operations, lock sync); new Pages Fail-closed requirement, CI key-distribution checks, API reference; expanded acceptance criteria; the management key (`OWNER_KEY`, UI label "Management key (recovery)") becomes the root recovery credential; registering any passkey requires an owner session plus `sgx-stepup`, and the first-lock-key exception is removed; deleting an app-class passkey advances only the app epoch; `/api/diag-keys` added. |
 | v1.0 | 2026-10-11 | Initial: three Ed25519 key pairs, naming rules, issuance and verification flow, epoch revocation, fail closed, rotation. |
 
 ---
