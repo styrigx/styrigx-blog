@@ -37,8 +37,9 @@ test('分支预览别名不跳转（走正常逻辑）', async () => {
     mockContext('https://feat-pages-dev-301.styrigx-blog.pages.dev/post/abc/'),
   );
   assert.notEqual(res.status, 301);
-  // env 未配置 SGX_SITE，直接放行到 next()
-  assert.equal(await res.text(), 'next');
+  // env 未配置 SGX_SITE：fail closed，302 到主站锁屏（why=no-config）
+  assert.equal(res.status, 302);
+  assert.ok(res.headers.get('Location').includes('why=no-config'));
 });
 
 test('哈希预览别名不跳转', async () => {
@@ -46,13 +47,15 @@ test('哈希预览别名不跳转', async () => {
     mockContext('https://abc1234.styrigx-blog.pages.dev/'),
   );
   assert.notEqual(res.status, 301);
-  assert.equal(await res.text(), 'next');
+  assert.equal(res.status, 302);
+  assert.ok(res.headers.get('Location').includes('why=no-config'));
 });
 
 test('正式域名不跳转', async () => {
   const res = await onRequest(mockContext('https://blog.styrigx.com/post/abc/'));
   assert.notEqual(res.status, 301);
-  assert.equal(await res.text(), 'next');
+  assert.equal(res.status, 302);
+  assert.ok(res.headers.get('Location').includes('why=no-config'));
 });
 
 test('后缀欺骗域名不跳转', async () => {
@@ -60,5 +63,6 @@ test('后缀欺骗域名不跳转', async () => {
     mockContext('https://styrigx-blog.pages.dev.evil.com/'),
   );
   assert.notEqual(res.status, 301);
-  assert.equal(await res.text(), 'next');
+  assert.equal(res.status, 302);
+  assert.ok(res.headers.get('Location').includes('why=no-config'));
 });
