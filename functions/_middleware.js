@@ -6,7 +6,7 @@
  * 其中 epoch 为 session epoch（整数），exp 为过期时间戳（毫秒），
  * sig 为主站 Ed25519 私钥对 "epoch.exp" 的签名（base64url）。
  *
- * 本站只持有公钥（环境变量 SGX_ED25519_PUBLIC，PEM 格式），绝不持有私钥，
+ * 本站只持有公钥（环境变量 SGX_LOCK_PUBLIC，PEM 格式），绝不持有私钥，
  * 只做验签，不签发会话。
  *
  * 逻辑：
@@ -211,10 +211,10 @@ export async function onRequest(context) {
     return next();
   }
 
-  const publicKeyPem = env.SGX_ED25519_PUBLIC;
+  const publicKeyPem = env.SGX_LOCK_PUBLIC;
   if (!publicKeyPem) {
     /* 配置缺失：fail closed，记日志 */
-    console.error('[blog-lock] SGX_ED25519_PUBLIC not configured');
+    console.error('[blog-lock] SGX_LOCK_PUBLIC not configured');
     return lockRedirect(url);
   }
 

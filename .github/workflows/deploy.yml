@@ -13,6 +13,13 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Assert no legacy key names
+        run: |
+          if grep -rn "SGX_ED25519_\|SGX_STEPUP_KEY" --include="*.js" --include="*.ts" --include="*.mjs" functions/ 2>/dev/null; then
+            echo "ERROR: Legacy key names found. Use SGX_LOCK_* per key spec v1.0."
+            exit 1
+          fi
+          echo "OK: no legacy key names."
       - name: Checkout
         uses: actions/checkout@v4
 
