@@ -52,6 +52,23 @@ jobs:
         env:
           SITE_URL: https://blog.styrigx.com
 
+      - name: Install Playwright browsers and CJK fonts
+        run: |
+          npx playwright install chromium --with-deps
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+
+      - name: Visual regression tests
+        run: npx playwright test --config=playwright.config.js
+
+      - name: Upload visual test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: visual-test-results
+          path: |
+            test-results/
+            playwright-report/
+
       - name: Deploy to Cloudflare Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
