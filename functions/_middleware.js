@@ -14,7 +14,9 @@
  *     （why=no-config），绝不静默放行。缺配置拒绝请求。
  *   - 白名单路径（静态资源、robots.txt 等）：直接放行。
  *   - Cookie 有效（验签通过、未过期、epoch >= 主站最新 epoch）：放行。
- *   - 其他：一律 302 到主站锁屏 https://styrigx.com/?lock=1&return=<原地址>。
+ *   - 其他：页面路径一律 302 到主站锁屏
+ *     https://styrigx.com/?lock=1&return=<原地址>；`/api/*` 回 401 JSON
+ *    （与 book 一致，避免 fetch 跟随跳转）。
  *     return 的白名单校验由主站做，本站只负责跳转出去。
  *
  * Fail closed：主站 /api/session-epoch 拿不到且本地无缓存时，一律拒绝
@@ -226,12 +228,12 @@ export async function onRequest(context) {
   if (!publicKeyPem) {
     /* 配置缺失：fail closed，记日志 */
     console.error('[blog-lock] SGX_LOCK_PUBLIC not configured');
-    return lockRedirect(url, 'no-config');
+    return rejectUnauthenticated(url, 'no-config');
   }
 
   const cookieValues = getCookies(request, 'sgx-verified');
   if (cookieValues.length === 0) {
-    return lockRedirect(url, 'no-cookie');
+    return rejectUnauthenticated(url, 'no-cookie');
   }
   let lastWhy = 'sig';
   for (const cookie of cookieValues) {
@@ -245,7 +247,24 @@ export async function onRequest(context) {
     lastWhy = result.why || 'sig';
   }
 
-  return lockRedirect(url, lastWhy);
+  return rejectUnauthenticated(url, lastWhy);
+}
+
+/**
+ * 未通过鉴权的请求：/api/* 回 401 JSON（与 book 一致，避免 fetch
+ * 跟随跳转），页面路径保持 302 到主站锁屏。
+ */
+function rejectUnauthenticated(url, why) {
+  if (url.pathname.startsWith('/api/')) {
+    return new Response(JSON.stringify({ ok: false, error: 'unauthorized' }), {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  }
+  return lockRedirect(url, why);
 }
 
 /** @param {URL} url */
