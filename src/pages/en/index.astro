@@ -1,69 +1,99 @@
 ---
-import IntroCard from '../../components/cards/IntroCard.astro';
-import ConnectCard from '../../components/cards/ConnectCard.astro';
-import NavigationCard from '../../components/cards/NavigationCard.astro';
-import ProfileCard from '../../components/cards/ProfileCard.astro';
-import DashboardFlow from '../../components/layout/DashboardFlow.astro';
-import BlogHeatmap from '../../components/widgets/BlogHeatmap.astro';
-import DoingCard from '../../components/widgets/DoingCard.astro';
+import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getSiteConfig } from '../../data/site';
+import { sortByDateDesc } from '../../utils/content-dates';
+import { slugifyGroupName } from '../../utils/content-groups';
+import { getUiTextFor } from '../../utils/ui-text';
+import { pageLangOf, postSlugFromId, postUrl, tagUrl } from '../../utils/lang';
 
+const lang = 'en';
 const siteConfig = await getSiteConfig();
-const { site, home, profile } = siteConfig;
-const doingItems = home.doingEn.length > 0 ? home.doingEn : home.doing;
+const { site } = siteConfig;
+const ui = getUiTextFor(lang);
 
-const intro = {
-  title: home.intro.en?.title ?? home.intro.title,
-  name: home.intro.en?.name ?? home.intro.name,
-  body: home.intro.en?.body ?? home.intro.body,
-};
-const quote = home.quote.en ?? home.quote;
-const profileEn = {
-  ...profile,
-  role: 'To understand the world, take it apart; to believe in it, put it back together.',
-};
+const posts = sortByDateDesc(
+  await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === 'en'),
+);
+const latest = posts.slice(0, 3);
+const [featured, ...rest] = latest;
 
-const navItems = [
-  { icon: 'pen', title: 'Posts', subtitle: 'Latest posts', href: '/en/archives' },
-  { icon: 'tags', title: 'Tags', subtitle: 'Browse by topic', href: '/en/tags' },
-  { icon: 'compass', title: 'About', subtitle: 'About me', href: '/en/about' },
-  { icon: 'rss', title: 'RSS', subtitle: 'Subscribe', href: '/en/rss.xml' },
-];
+// Top tags for the topics row
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags ?? []) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+function readingMinutes(post: (typeof posts)[number]): number {
+  const body = post.body ?? post.data.description ?? '';
+  const en = body.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) ?? [];
+  const cjk = body.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) ?? [];
+  return Math.max(1, Math.ceil(en.length / 220 + cjk.length / 500));
+}
+
+function formatDate(date: Date): string {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
 ---
 
 <BaseLayout title={site.pageTitle} description={site.pageDescription} lang="en">
-  <DashboardFlow>
-    <Fragment slot="profile">
-      <ProfileCard profile={profileEn} />
-    </Fragment>
+  <div class="oui-home">
+    <section class="oui-hero">
+      <h1>Styrigx</h1>
+      <p>To understand the world, take it apart; to believe in it, put it back together.</p>
+    </section>
 
-    <Fragment slot="intro">
-      <IntroCard intro={intro} quote={quote} greeting="" />
-    </Fragment>
+    <div class="oui-section-head">
+      <h2>Latest writing</h2>
+      <a href="/en/archives">View archive</a>
+    </div>
 
-    <Fragment slot="doing">
-      {doingItems.length > 0 && <DoingCard items={doingItems} moreHref="https://styrigx.com/en/#now" moreLabel="More →" />}
-    </Fragment>
+    <section class="oui-post-stack" aria-label="Latest writing">
+      {featured && (
+        <div class="oui-post-featured-group">
+          <a class="oui-post-card oui-post-card--featured" href={postUrl(lang, postSlugFromId(featured.id))}>
+            <div>
+              {(featured.data.tags ?? []).slice(0, 1).map((tag) => (
+                <span class="oui-tag">{tag}</span>
+              ))}
+              <h3>{featured.data.title}</h3>
+            </div>
+            <div>
+              <p>{featured.data.description}</p>
+              <div class="oui-post-meta">
+                <span>{formatDate(featured.data.date)}</span>
+                <span>·</span>
+                <span>{ui.article.readingTime(readingMinutes(featured))}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      )}
+      {rest.map((post) => (
+        <a class="oui-post-card" href={postUrl(lang, postSlugFromId(post.id))}>
+          {(post.data.tags ?? []).slice(0, 1).map((tag) => (
+            <span class="oui-tag">{tag}</span>
+          ))}
+          <h3>{post.data.title}</h3>
+          <p>{post.data.description}</p>
+          <div class="oui-post-meta">
+            <span>{formatDate(post.data.date)}</span>
+            <span>·</span>
+            <span>{ui.article.readingTime(readingMinutes(post))}</span>
+          </div>
+        </a>
+      ))}
+    </section>
 
-    <Fragment slot="latest">
-      <BlogHeatmap
-        weeks={home.latest.heatmapWeeks}
-        showLatest={home.latest.showHeatmapLatest}
-        latestCount={home.latest.count}
-        excludeDraft={home.latest.excludeDraft}
-        startDate={home.latest.startDate || null}
-        dateArchiveBaseHref={home.latest.dateArchiveBaseHref || undefined}
-        lang="en"
-      />
-    </Fragment>
-
-    <Fragment slot="navigation">
-      <NavigationCard items={navItems} />
-    </Fragment>
-
-    <Fragment slot="connect">
-      <ConnectCard links={home.links} />
-    </Fragment>
-  </DashboardFlow>
+    <nav class="oui-topics" aria-label="Topics">
+      <a class="oui-topic-btn" href="/en/archives">All posts</a>
+      {topTags.map(([tag]) => (
+        <a class="oui-topic-btn" href={tagUrl(lang, slugifyGroupName(tag))}>{tag}</a>
+      ))}
+    </nav>
+  </div>
 </BaseLayout>

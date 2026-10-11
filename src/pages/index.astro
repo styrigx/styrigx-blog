@@ -1,24 +1,42 @@
 ---
-import IntroCard from '../components/cards/IntroCard.astro';
-import ConnectCard from '../components/cards/ConnectCard.astro';
-import NavigationCard from '../components/cards/NavigationCard.astro';
-import ProfileCard from '../components/cards/ProfileCard.astro';
-import DashboardFlow from '../components/layout/DashboardFlow.astro';
-import BlogHeatmap from '../components/widgets/BlogHeatmap.astro';
-import DoingCard from '../components/widgets/DoingCard.astro';
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getSiteConfig } from '../data/site';
+import { sortByDateDesc } from '../utils/content-dates';
+import { slugifyGroupName } from '../utils/content-groups';
+import { getUiTextFor } from '../utils/ui-text';
+import { pageLangOf, postSlugFromId, postUrl, tagUrl } from '../utils/lang';
 
+const lang = 'zh';
 const siteConfig = await getSiteConfig();
-const { site, home, profile } = siteConfig;
-const doingItems = home.doing;
+const { site } = siteConfig;
+const ui = getUiTextFor(lang);
 
-const navItems = [
-  { icon: 'pen', title: '文章', subtitle: '最新文章', href: '/archives' },
-  { icon: 'tags', title: '标签', subtitle: '按话题浏览', href: '/tags' },
-  { icon: 'compass', title: '关于', subtitle: '关于我', href: '/about' },
-  { icon: 'rss', title: 'RSS', subtitle: '订阅更新', href: '/rss.xml' },
-];
+const posts = sortByDateDesc(
+  await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === 'zh'),
+);
+const latest = posts.slice(0, 3);
+const [featured, ...rest] = latest;
+
+// Top tags for the topics row
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags ?? []) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+const topTags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+function readingMinutes(post: (typeof posts)[number]): number {
+  const body = post.body ?? post.data.description ?? '';
+  const en = body.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) ?? [];
+  const cjk = body.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu) ?? [];
+  return Math.max(1, Math.ceil(en.length / 220 + cjk.length / 500));
+}
+
+function formatDate(date: Date): string {
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+}
 ---
 
 <BaseLayout title={site.pageTitle} description={site.pageDescription} lang="zh">
@@ -45,37 +63,59 @@ const navItems = [
       } catch {}
     })();
   </script>
-  <DashboardFlow>
-    <Fragment slot="profile">
-      <ProfileCard profile={profile} />
-    </Fragment>
+  <div class="oui-home">
+    <section class="oui-hero">
+      <h1>Styrigx</h1>
+      <p>拆开世界是为了看懂它，再把它装回去是为了相信它。</p>
+    </section>
 
-    <Fragment slot="intro">
-      <IntroCard intro={home.intro} quote={home.quote} greeting="" />
-    </Fragment>
+    <div class="oui-section-head">
+      <h2>最近文章</h2>
+      <a href="/archives">查看归档</a>
+    </div>
 
-    <Fragment slot="doing">
-      {doingItems.length > 0 && <DoingCard items={doingItems} moreHref="https://styrigx.com/#now" moreLabel="更多动态 →" />}
-    </Fragment>
+    <section class="oui-post-stack" aria-label="最近文章">
+      {featured && (
+        <div class="oui-post-featured-group">
+          <a class="oui-post-card oui-post-card--featured" href={postUrl(lang, postSlugFromId(featured.id))}>
+            <div>
+              {(featured.data.tags ?? []).slice(0, 1).map((tag) => (
+                <span class="oui-tag">{tag}</span>
+              ))}
+              <h3>{featured.data.title}</h3>
+            </div>
+            <div>
+              <p>{featured.data.description}</p>
+              <div class="oui-post-meta">
+                <span>{formatDate(featured.data.date)}</span>
+                <span>·</span>
+                <span>{ui.article.readingTime(readingMinutes(featured))}</span>
+              </div>
+            </div>
+          </a>
+        </div>
+      )}
+      {rest.map((post) => (
+        <a class="oui-post-card" href={postUrl(lang, postSlugFromId(post.id))}>
+          {(post.data.tags ?? []).slice(0, 1).map((tag) => (
+            <span class="oui-tag">{tag}</span>
+          ))}
+          <h3>{post.data.title}</h3>
+          <p>{post.data.description}</p>
+          <div class="oui-post-meta">
+            <span>{formatDate(post.data.date)}</span>
+            <span>·</span>
+            <span>{ui.article.readingTime(readingMinutes(post))}</span>
+          </div>
+        </a>
+      ))}
+    </section>
 
-    <Fragment slot="latest">
-      <BlogHeatmap
-        weeks={home.latest.heatmapWeeks}
-        showLatest={home.latest.showHeatmapLatest}
-        latestCount={home.latest.count}
-        excludeDraft={home.latest.excludeDraft}
-        startDate={home.latest.startDate || null}
-        dateArchiveBaseHref={home.latest.dateArchiveBaseHref || undefined}
-        lang="zh"
-      />
-    </Fragment>
-
-    <Fragment slot="navigation">
-      <NavigationCard items={navItems} />
-    </Fragment>
-
-    <Fragment slot="connect">
-      <ConnectCard links={home.links} />
-    </Fragment>
-  </DashboardFlow>
+    <nav class="oui-topics" aria-label="话题">
+      <a class="oui-topic-btn" href="/archives">全部文章</a>
+      {topTags.map(([tag]) => (
+        <a class="oui-topic-btn" href={tagUrl(lang, slugifyGroupName(tag))}>{tag}</a>
+      ))}
+    </nav>
+  </div>
 </BaseLayout>
