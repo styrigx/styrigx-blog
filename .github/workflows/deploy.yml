@@ -25,6 +25,16 @@ jobs:
           fi
           echo "OK: no legacy key names."
 
+      - name: Key distribution static check
+        # blog 是子站：functions/ 里不得出现任何 *_PRIVATE 或 SGX_STEPUP_*。
+        # 私钥只在主站，STEPUP 密钥对只在主站。出现即构建失败。
+        run: |
+          if grep -rn --include="*.js" -E "_PRIVATE|SGX_STEPUP_" functions/; then
+            echo "FAIL: functions/ must not contain *_PRIVATE or SGX_STEPUP_"
+            exit 1
+          fi
+          echo "OK: key distribution check passed."
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
