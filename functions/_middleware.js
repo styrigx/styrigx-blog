@@ -35,6 +35,7 @@ const ALLOWLIST_EXACT = new Set([
   '/favicon.ico',
   '/manifest.json',
   '/browserconfig.xml',
+  '/api/key-fingerprint',
 ]);
 
 /* 白名单：静态资源后缀（不含正文内容） */
@@ -76,7 +77,11 @@ function getPublicKey(pem) {
       { name: 'Ed25519' },
       false,
       ['verify'],
-    );
+    ).catch((e) => {
+      /* 失败时置回 null，下次重试，不永久缓存失败的 promise */
+      publicKeyPromise = null;
+      throw e;
+    });
   }
   return publicKeyPromise;
 }
@@ -144,46 +149,48 @@ async function getLatestEpoch() {
 async function verifyCookie(cookieValue, publicKeyPem) {
   const parts = cookieValue.split('.');
   /* 主站 2.8.0 起为四段式 role.epoch.exp.sig；三段旧格式一律无效，不留兼容层 */
-  if (parts.length !== 4) return false;
+  if (parts.length !== 4) return { ok: false, why: 'bad-format' };
   const [role, epochStr, expStr, sigB64] = parts;
-  if (role !== 'owner' && role !== 'visitor') return false;
+  if (role !== 'owner' && role !== 'visitor') return { ok: false, why: 'bad-format' };
   const epoch = Number(epochStr);
   const exp = Number(expStr);
-  if (!Number.isInteger(epoch) || epoch < 0) return false;
-  if (!Number.isFinite(exp) || exp <= Date.now()) return false;
+  if (!Number.isInteger(epoch) || epoch < 0) return { ok: false, why: 'bad-format' };
+  if (!Number.isFinite(exp) || exp <= Date.now()) return { ok: false, why: 'expired' };
 
   let key;
   try {
     key = await getPublicKey(publicKeyPem);
   } catch (e) {
     console.error('[blog-lock] public key import failed', e);
-    return false;
+    return { ok: false, why: 'key-import' };
   }
   const data = new TextEncoder().encode(role + '.' + epochStr + '.' + expStr);
   let sig;
   try {
     sig = base64UrlToBytes(sigB64);
   } catch (e) {
-    return false;
+    return { ok: false, why: 'bad-format' };
   }
   let ok = false;
   try {
     ok = await crypto.subtle.verify('Ed25519', key, sig, data);
   } catch (e) {
-    return false;
+    return { ok: false, why: 'sig' };
   }
-  if (!ok) return false;
+  if (!ok) return { ok: false, why: 'sig' };
 
   /* epoch 检查：cookie 的 epoch 必须 >= 主站最新 epoch（退出所有设备后旧 cookie 失效） */
   let latest;
   try {
     latest = await getLatestEpoch();
   } catch (e) {
-    /* Fail closed：拿不到 epoch 一律拒绝 */
-    console.error('[blog-lock] epoch fetch failed, fail closed', e);
-    return false;
+    /* Fail closed：拿不到 epoch 一律拒绝；记录 HTTP 状态码 */
+    const status = e && e.status ? e.status : 'unknown';
+    console.error('[blog-lock] epoch fetch failed, fail closed, status=' + status, e);
+    return { ok: false, why: 'epoch-fetch' };
   }
-  return epoch >= latest;
+  if (epoch < latest) return { ok: false, why: 'epoch-stale' };
+  return { ok: true, why: '' };
 }
 
 /** @param {any} context */
@@ -217,26 +224,34 @@ export async function onRequest(context) {
   if (!publicKeyPem) {
     /* 配置缺失：fail closed，记日志 */
     console.error('[blog-lock] SGX_LOCK_PUBLIC not configured');
-    return lockRedirect(url);
+    return lockRedirect(url, 'no-config');
   }
 
   const cookieValues = getCookies(request, 'sgx-verified');
+  if (cookieValues.length === 0) {
+    return lockRedirect(url, 'no-cookie');
+  }
+  let lastWhy = 'sig';
   for (const cookie of cookieValues) {
-    let ok = false;
+    let result = { ok: false, why: 'sig' };
     try {
-      ok = await verifyCookie(cookie, publicKeyPem);
+      result = await verifyCookie(cookie, publicKeyPem);
     } catch (e) {
-      ok = false;
+      result = { ok: false, why: 'sig' };
     }
-    if (ok) return next();
+    if (result.ok) return next();
+    lastWhy = result.why || 'sig';
   }
 
-  return lockRedirect(url);
+  return lockRedirect(url, lastWhy);
 }
 
 /** @param {URL} url */
-function lockRedirect(url) {
-  const target =
+function lockRedirect(url, why) {
+  let target =
     MAIN_ORIGIN + '/?lock=1&return=' + encodeURIComponent(url.toString());
+  if (why) {
+    target += '&why=' + encodeURIComponent(why);
+  }
   return Response.redirect(target, 302);
 }
