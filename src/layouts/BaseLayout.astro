@@ -22,6 +22,7 @@ const htmlLang = getHtmlLang(siteConfig);
   <Fragment slot="head">
     <BaseHead title={title} description={description} />
     <slot name="head-extra" />
+    <script src="/js/sgx-lock-check.js" defer></script>
   </Fragment>
   <Fragment slot="navigation">
     <BlogTopNav lang={lang} />
