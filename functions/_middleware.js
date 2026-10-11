@@ -143,8 +143,10 @@ async function getLatestEpoch() {
  */
 async function verifyCookie(cookieValue, publicKeyPem) {
   const parts = cookieValue.split('.');
-  if (parts.length !== 3) return false;
-  const [epochStr, expStr, sigB64] = parts;
+  /* 主站 2.8.0 起为四段式 role.epoch.exp.sig；三段旧格式一律无效，不留兼容层 */
+  if (parts.length !== 4) return false;
+  const [role, epochStr, expStr, sigB64] = parts;
+  if (role !== 'owner' && role !== 'visitor') return false;
   const epoch = Number(epochStr);
   const exp = Number(expStr);
   if (!Number.isInteger(epoch) || epoch < 0) return false;
@@ -157,7 +159,7 @@ async function verifyCookie(cookieValue, publicKeyPem) {
     console.error('[blog-lock] public key import failed', e);
     return false;
   }
-  const data = new TextEncoder().encode(epochStr + '.' + expStr);
+  const data = new TextEncoder().encode(role + '.' + epochStr + '.' + expStr);
   let sig;
   try {
     sig = base64UrlToBytes(sigB64);
