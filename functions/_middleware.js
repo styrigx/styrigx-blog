@@ -82,9 +82,21 @@ export async function onRequest(context) {
     return lockRedirect(url, 'no-config');
   }
 
-  /* 白名单路径直接放行 */
+  /* 白名单路径直接放行；带内容哈希的静态资源加长期缓存（_headers 对经过
+     Functions 的响应不生效，见 Book #22） */
   if (isWhitelisted(url.pathname)) {
-    return next();
+    const resp = await next();
+    // Astro/Vite ?url 指纹化产物形如 /_astro/xxx.<hash>.js：immutable 长期缓存
+    if (/\/_[a-z]+\/[^/]*\.[A-Za-z0-9_-]{8,}\.(js|mjs|css)$/.test(url.pathname)) {
+      const headers = new Headers(resp.headers);
+      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+      return new Response(resp.body, {
+        status: resp.status,
+        statusText: resp.statusText,
+        headers,
+      });
+    }
+    return resp;
   }
 
   const publicKeyPem = env.SGX_LOCK_PUBLIC;

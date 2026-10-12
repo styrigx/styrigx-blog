@@ -5,6 +5,8 @@ import BlogTopNav from '../components/blog/BlogTopNav.astro';
 import ScrollToTopButton from '../components/ScrollToTopButton.astro';
 import { getSiteConfig } from '../data/site';
 import { getHtmlLang } from '../utils/ui-text';
+// 内容哈希指纹：避免部署后客户端跑旧脚本（_headers 对经过 Functions 中间件的响应不生效）
+import lockCheckUrl from '../scripts/sgx-lock-check.js?url';
 
 interface Props {
   title: string;
@@ -22,7 +24,7 @@ const htmlLang = getHtmlLang(siteConfig);
   <Fragment slot="head">
     <BaseHead title={title} description={description} />
     <slot name="head-extra" />
-    <script src="/js/sgx-lock-check.js" defer></script>
+    <script src={lockCheckUrl} defer></script>
   </Fragment>
   <Fragment slot="navigation">
     <BlogTopNav lang={lang} />

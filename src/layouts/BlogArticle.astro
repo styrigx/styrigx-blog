@@ -166,9 +166,11 @@ const shareUrl = new URL(currentPathname, siteConfig.site.url).toString();
     <BlogTopNav showTocIcon={hasToc} tocItems={tocItems} lang={lang} zhHref={zhHref} enHref={enHref} />
     <div class="blog-background" aria-hidden="true"></div>
 
-    <main class:list={['blog-layout', { 'blog-layout-centered': !hasSidebar }]} data-pagefind-body>
+    <div class="oui-article-wrap">
+    <div class="oui-article-layout">
+    <main class:list={['blog-layout', 'oui-article-main', { 'blog-layout-centered': !hasSidebar }]} data-pagefind-body>
       <div class="article-column">
-        <article class="article-card">
+        <article class="article-card oui-article-paper">
           <ArticleHeader
             title={title}
             description={description}
@@ -243,16 +245,18 @@ const shareUrl = new URL(currentPathname, siteConfig.site.url).toString();
         }
       </div>
 
+    </main>
       {
         hasSidebar && (
-          <aside class="right-sidebar" aria-label={ui.article.readingTools}>
+          <aside class="right-sidebar oui-toc-card" aria-label={ui.article.readingTools}>
             <div class="right-sidebar-inner">
               {hasToc && <TableOfContents items={tocItems} font={contentFont} lang={lang} />}
             </div>
           </aside>
         )
       }
-    </main>
+    </div>
+    </div>
     <Footer lang={lang} />
     <ScrollToTopButton />
     <ZoomableImage />

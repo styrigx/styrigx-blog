@@ -4,6 +4,7 @@ description: "How AI agents push code, open PRs, and merge — without ever touc
 date: 2026-10-11
 lang: en
 tags: ["Specification", "GitHub", "AI Agents", "Security"]
+superseded: true
 ---
 
 ## 0. Abstract

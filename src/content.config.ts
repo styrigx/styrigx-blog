@@ -54,6 +54,9 @@ const articleSchema = ({ image }: Parameters<CollectionSchemaFactory>[0]) =>
 const blogArticleSchema = (context: Parameters<CollectionSchemaFactory>[0]) =>
   articleSchema(context).extend({
     sticky: z.union([z.boolean(), z.number().positive()]).optional().default(false),
+    // 首页大卡：featured=true 可显式指定；superseded=true 的旧版本不上大卡
+    featured: z.boolean().optional().default(false),
+    superseded: z.boolean().optional().default(false),
   });
 
 const contentBase = './src/content';
