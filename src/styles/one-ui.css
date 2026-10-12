@@ -625,7 +625,7 @@ a {
 
 @media (min-width: 1100px) {
   .oui-article-wrap {
-    padding: 46px 46px 72px;
+    padding: var(--oui-nav-clear) 46px 72px;
   }
 
   .oui-article-layout {
@@ -753,7 +753,7 @@ a {
 
 @media (min-width: 900px) {
   .oui-archive-wrap {
-    padding: 46px 46px 72px;
+    padding: var(--oui-nav-clear) 46px 72px;
   }
 
   .oui-archive-grid {
