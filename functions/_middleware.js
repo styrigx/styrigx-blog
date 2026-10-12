@@ -86,8 +86,16 @@ export async function onRequest(context) {
      Functions 的响应不生效，见 Book #22） */
   if (isWhitelisted(url.pathname)) {
     const resp = await next();
-    // Astro/Vite ?url 指纹化产物形如 /_astro/xxx.<hash>.js：immutable 长期缓存
-    if (/\/_[a-z]+\/[^/]*\.[A-Za-z0-9_-]{8,}\.(js|mjs|css)$/.test(url.pathname)) {
+    // Astro/Vite ?url 指纹化产物形如 /_astro/xxx.<hash>.js：immutable 长期缓存。
+    // 只在 200 且 content-type 是 JS/CSS 时加；缺失文件（404）或回落的
+    // text/html 不加，避免把 404/HTML 当静态资源缓存一年（Book 线上事故）。
+    if (
+      resp.status === 200 &&
+      /\/_[a-z]+\/[^/]*\.[A-Za-z0-9_-]{8,}\.(js|mjs|css)$/.test(url.pathname) &&
+      /(?:javascript|ecmascript|^text\/css)/i.test(
+        resp.headers.get('content-type') || ''
+      )
+    ) {
       const headers = new Headers(resp.headers);
       headers.set('Cache-Control', 'public, max-age=31536000, immutable');
       return new Response(resp.body, {

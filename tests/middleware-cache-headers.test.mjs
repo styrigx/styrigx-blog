@@ -32,6 +32,41 @@ test('指纹化 JS（/_astro/xxx.<hash>.js）返回 immutable 长期缓存', asy
   assert.equal(await res.text(), 'js-body');
 });
 
+test('指纹化路径但 404 时不加 immutable（缺失文件不得长期缓存）', async () => {
+  const ctx = {
+    request: new Request('https://blog.styrigx.com/_astro/missing.M1f5FtKP.js'),
+    next: async () =>
+      new Response('Not Found', {
+        status: 404,
+        headers: { 'Content-Type': 'text/plain' },
+      }),
+    env: { SGX_SITE: 'blog' },
+  };
+  const res = await onRequest(ctx);
+  assert.equal(res.status, 404);
+  assert.notEqual(
+    res.headers.get('Cache-Control'),
+    'public, max-age=31536000, immutable'
+  );
+});
+
+test('指纹化路径但返回 text/html（回落首页壳）时不加 immutable', async () => {
+  const ctx = {
+    request: new Request('https://blog.styrigx.com/_astro/gone.M1f5FtKP.js'),
+    next: async () =>
+      new Response('<html></html>', {
+        headers: { 'Content-Type': 'text/html' },
+      }),
+    env: { SGX_SITE: 'blog' },
+  };
+  const res = await onRequest(ctx);
+  assert.equal(res.status, 200);
+  assert.notEqual(
+    res.headers.get('Cache-Control'),
+    'public, max-age=31536000, immutable'
+  );
+});
+
 test('未指纹化的 /js/ 路径不加 immutable', async () => {
   const res = await onRequest(
     mockContext('https://blog.styrigx.com/js/some-lib.js')
