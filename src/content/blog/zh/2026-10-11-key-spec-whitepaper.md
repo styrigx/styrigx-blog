@@ -5,6 +5,7 @@ date: 2026-10-11
 lang: zh
 series: ["Styrigx UI 鉴权规范"]
 tags: ["规范", "安全", "Cloudflare", "Ed25519"]
+superseded: true
 ---
 
 ## 0. 摘要

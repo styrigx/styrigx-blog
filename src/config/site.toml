@@ -124,7 +124,7 @@ label = "About"
 href = "/en/about"
 
 [[config.topNav.en.links]]
-label = "Home"
+label = "Main Site"
 href = "https://styrigx.com"
 
 [config.home]

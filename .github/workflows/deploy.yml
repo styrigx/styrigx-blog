@@ -54,6 +54,10 @@ jobs:
       - name: Run middleware tests
         run: bun run test
 
+      - name: Check design tokens sync with main site
+        # 博客的 --m-* / --glass-* 必须与主站 @layer tokens 逐项一致，主站是唯一来源
+        run: node scripts/check-design-tokens.mjs
+
       - name: Install Playwright browsers and CJK fonts
         run: |
           npx playwright install chromium --with-deps

@@ -6,6 +6,7 @@ import { sortByDateDesc } from '../../utils/content-dates';
 import { slugifyGroupName } from '../../utils/content-groups';
 import { getUiTextFor } from '../../utils/ui-text';
 import { pageLangOf, postSlugFromId, postUrl, tagUrl } from '../../utils/lang';
+import { selectHeroPost } from '../../utils/content-dates';
 
 const lang = 'en';
 const siteConfig = await getSiteConfig();
@@ -16,7 +17,9 @@ const posts = sortByDateDesc(
   await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === 'en'),
 );
 const latest = posts.slice(0, 3);
-const [featured, ...rest] = latest;
+// 大卡：显式 featured 优先，否则最新一篇非 superseded；被取代版本不上大卡
+const featured = selectHeroPost(latest);
+const rest = latest.filter((p) => p !== featured);
 
 // Top tags for the topics row
 const tagCounts = new Map<string, number>();

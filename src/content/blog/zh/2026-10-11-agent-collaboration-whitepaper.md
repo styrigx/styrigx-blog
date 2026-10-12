@@ -4,6 +4,7 @@ description: "让 AI 代理能推代码、开 PR、合并，但永远碰不到 m
 date: 2026-10-11
 lang: zh
 tags: ["规范", "GitHub", "AI 代理", "安全"]
+superseded: true
 ---
 
 ## 0. 摘要

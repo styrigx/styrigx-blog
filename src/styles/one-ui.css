@@ -62,6 +62,17 @@
   --oui-radius-paper: 28px;
   --oui-shadow-card: 0 10px 26px rgba(28, 39, 55, 0.1);
   --oui-topbar-h: 64px;
+  /* 悬浮顶栏是 position:fixed，不占文档流；内容区顶部必须留出
+   * top 偏移 + 顶栏高度 + 间距 + safe-area，避免标题被顶栏遮住。
+   * 顶栏尺寸见 BlogTopNav.astro：移动端 top:10px/min-height:54px，
+   * 桌面端 top:18px/min-height:56px。 */
+  --oui-nav-clear: calc(env(safe-area-inset-top, 0px) + 10px + 54px + 20px);
+}
+
+@media (min-width: 721px) {
+  :root {
+    --oui-nav-clear: calc(env(safe-area-inset-top, 0px) + 18px + 56px + 28px);
+  }
 }
 
 :root[data-theme="dark"],
@@ -276,7 +287,7 @@ a {
 .oui-home {
   width: min(1110px, 100%);
   margin: 0 auto;
-  padding: 14px 18px 64px;
+  padding: var(--oui-nav-clear) 18px 64px;
 }
 
 .oui-hero {
@@ -430,7 +441,7 @@ a {
 
 @media (min-width: 900px) {
   .oui-home {
-    padding: 46px 46px 72px;
+    padding: var(--oui-nav-clear) 46px 72px;
   }
 
   .oui-hero {
@@ -481,7 +492,7 @@ a {
 .oui-article-wrap {
   width: min(1110px, 100%);
   margin: 0 auto;
-  padding: 14px 18px 64px;
+  padding: var(--oui-nav-clear) 18px 64px;
 }
 
 .oui-page-title {
@@ -667,7 +678,7 @@ a {
 .oui-archive-wrap {
   width: min(1110px, 100%);
   margin: 0 auto;
-  padding: 14px 18px 64px;
+  padding: var(--oui-nav-clear) 18px 64px;
 }
 
 .oui-tag-cloud {
@@ -764,7 +775,7 @@ a {
 .oui-search-wrap {
   width: min(820px, 100%);
   margin: 0 auto;
-  padding: 14px 18px 64px;
+  padding: var(--oui-nav-clear) 18px 64px;
 }
 
 .oui-searchbox {
@@ -859,7 +870,7 @@ mark {
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--oui-nav-clear) 20px 40px;
 }
 
 .oui-notfound .num {

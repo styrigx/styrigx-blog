@@ -62,3 +62,26 @@ test('search dialog baseline screenshot', async ({ page }) => {
   }, { timeout: 10000 }).catch(() => {});
   await expect(page).toHaveScreenshot('search-dialog.png', { fullPage: false });
 });
+
+test('悬浮顶栏不遮挡首个标题（布局断言）', async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.removeItem('navfolio-theme');
+    } catch {}
+  });
+  // 首页 + 文章页：页面顶部时，首个 h1 的 top 必须 ≥ 顶栏 bottom
+  for (const path of ['/', '/post/2026-10-07-muse-playbook/']) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const result = await page.evaluate(() => {
+      const header = document.querySelector('.blog-top-nav');
+      const h1 = document.querySelector('.oui-home h1, .oui-article-wrap h1, .oui-page-title h1');
+      if (!header || !h1) return { ok: false, reason: 'header 或 h1 未找到' };
+      const hb = header.getBoundingClientRect();
+      const ht = h1.getBoundingClientRect();
+      return { ok: ht.top >= hb.bottom - 1, h1Top: ht.top, headerBottom: hb.bottom };
+    });
+    expect(result.ok, `${path} 首个标题被顶栏遮挡 (h1.top=${result.h1Top}, header.bottom=${result.headerBottom})`).toBe(true);
+  }
+});
