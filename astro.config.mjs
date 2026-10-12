@@ -70,5 +70,9 @@ export default defineConfig({
         ),
       },
     },
+    build: {
+      // ?url 引入的脚本不内联为 data URI，输出带内容哈希的独立文件（避免部署后跑旧脚本）
+      assetsInlineLimit: 0,
+    },
   },
 });

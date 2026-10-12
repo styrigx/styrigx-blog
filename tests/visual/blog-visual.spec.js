@@ -23,10 +23,15 @@ for (const { name, path } of PAGES) {
         localStorage.removeItem('navfolio-theme');
       } catch {}
     });
-    await page.goto(path, { waitUntil: 'networkidle' });
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
     // 等字体与图片稳定
     await page.evaluate(() => document.fonts.ready);
     await page.locator('.oui-home, .oui-article-wrap, .oui-archive-wrap, .oui-notfound').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    // 无横向溢出断言
+    const overflow = await page.evaluate(() => {
+      return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+    });
+    expect(overflow, `${name} 有横向溢出`).toBe(false);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: false });
   });
 }
@@ -37,12 +42,23 @@ test('search dialog baseline screenshot', async ({ page }) => {
       localStorage.removeItem('navfolio-theme');
     } catch {}
   });
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => document.fonts.ready);
+  // 等图片加载完成（替代 networkidle）
+  await page.evaluate(() => Promise.all(
+    Array.from(document.images).map(img =>
+      img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })
+    )
+  ));
   // 打开搜索弹窗
   const trigger = page.locator('[data-site-search-trigger]').first();
   await trigger.click();
   await page.waitForSelector('[data-site-search-dialog]', { state: 'visible' });
   await page.locator('[data-site-search-input]').waitFor({ state: 'visible' });
+  // 等搜索就绪（状态文本从加载中变为 idle）
+  await page.waitForFunction(() => {
+    const status = document.querySelector('[data-site-search-status]');
+    return status && !/加载|loading/i.test(status.textContent || '');
+  }, { timeout: 10000 }).catch(() => {});
   await expect(page).toHaveScreenshot('search-dialog.png', { fullPage: false });
 });
