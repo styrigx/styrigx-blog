@@ -1,10 +1,13 @@
 ---
-title: "Styrigx Key Specification Whitepaper v2.0: Three Trust Domains, Passkey Classification, and the Complete Auth Flow"
-description: "v2.0 revision: the lock, APP, and main-site trust domains are fully separated; passkeys are classified into lock and app types that cannot be mixed; APP verification no longer goes through main-site step-up; the complete flow from visitor entry to sensitive operations on sub-sites is documented. Supersedes v1.0, which is retained as a historical version."
+title: "Styrigx UI Auth Spec 2.0: Three Doors for Lock Screen, Owner, and Apps"
+description: "Styrigx UI Auth Spec 2.0: the lock, APP, and main-site trust domains are fully separated; passkeys are classified into lock and app types that cannot be mixed; APP verification no longer goes through main-site step-up; the complete flow from visitor entry to sensitive operations on sub-sites is documented."
 date: 2026-10-11
 lang: en
-tags: ["spec", "security", "Cloudflare", "Ed25519", "Passkey"]
+series: ["Styrigx UI Auth Spec"]
+tags: ["Styrigx UI", "auth", "security", "Passkey", "Cloudflare"]
 ---
+
+> This is the second edition of the "Styrigx UI Auth Spec" series. The previous edition is [Styrigx Key Specification Whitepaper v1.0](/post/2026-10-11-key-spec-whitepaper/) (Chinese only).
 
 ## 0. Summary
 
@@ -27,8 +30,6 @@ Seven core principles:
 5. **Missing configuration means rejection** (fail closed); nothing degrades into access.
 6. **All credentials expire and are revocable**: the session epoch invalidates every credential at once; the app epoch invalidates one app's credentials independently.
 7. **The management key is the root recovery credential**: `OWNER_KEY` (UI label "Management key (recovery)") works even while locked and can issue an owner session and `sgx-stepup`, but never `sgx-app`.
-
-**This document supersedes v1.0, which is retained as a historical version.**
 
 ## 1. Scope and Roles
 
