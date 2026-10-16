@@ -1,9 +1,14 @@
 ---
-import { Github, ListTree, Menu, Moon, Sun } from 'lucide-astro';
-import LangSwitcher from '../LangSwitcher.astro';
+// 顶栏 v2.0（与 Book 同款）：返回圆 + 长条（头像 · Styrigx 居中 · ⋮）+ 导航圆（九宫点）。
+// - 头像始终显示；Styrigx 在长条内水平垂直居中。
+// - 页面大标题（main h1，首页除外）随滚动淡出；贴到顶栏下沿时完全消失，
+//   同一刻 Styrigx 隐藏、同一位置淡入小标题（= 大标题文字）。
+// - 导航圆菜单：首页 / 文章 / 主站 / 书库（来自 site.toml 的 topNav）。
+// - ⋮ 菜单：搜索、目录（文章页且有目录时，仅手机）、切换语言、深浅色、GitHub 仓库。
+import { Github, ListTree, Moon, Search, Sun } from 'lucide-astro';
 import SiteSearch from './SiteSearch.astro';
 import TocTree from './TocTree.astro';
-import { getRouteLabels, getSiteConfig, getTopNavLinks } from '../../data/site';
+import { getSiteConfig, getTopNavLinks } from '../../data/site';
 import { getUiTextFor } from '../../utils/ui-text';
 import { localizedPath, type PageLang } from '../../utils/lang';
 import type { TocItem } from '../../utils/toc-tree';
@@ -23,6 +28,7 @@ const { zhHref = '/', enHref = '/en/' } = Astro.props;
 const siteConfig = await getSiteConfig();
 const { site, search } = siteConfig;
 const ui = getUiTextFor(lang);
+const isEn = lang === 'en';
 const links = await getTopNavLinks(lang);
 const homeHref = localizedPath(lang, '/');
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -44,138 +50,185 @@ function withBase(href: string) {
   return `${basePath}${href.startsWith('/') ? href : `/${href}`}`;
 }
 
+/** 当前站点内的页面才可能是「当前」；外站（主站、书库）永远不是。 */
 function isActive(href: string) {
   if (href.startsWith('http')) return false;
 
   const normalizedHref = href.replace(/\/$/, '') || '/';
 
-  if (normalizedHref === '/') {
-    return currentPath === '/';
+  if (normalizedHref === '/' || normalizedHref === '/en') {
+    return currentPath === normalizedHref;
   }
 
   return currentPath === normalizedHref || currentPath.startsWith(`${normalizedHref}/`);
 }
 
-const routeLabels = getRouteLabels();
-const activeRoute = Object.entries(routeLabels).find(
-  ([route]) => currentPath === route || currentPath.startsWith(`${route}/`),
-);
-const brandRouteLabel = activeRoute?.[1];
 const shouldShowTocAction = showTocIcon && tocItems.length > 0;
+const langTargetHref = withBase(isEn ? zhHref : enHref);
+const langTarget: PageLang = isEn ? 'zh' : 'en';
+const avatarSrc = withBase('/images/avatar.png');
+const t = {
+  back: isEn ? 'Back' : '返回',
+  home: isEn ? `${site.title} home` : `${site.title} 首页`,
+  more: isEn ? 'More options' : '更多选项',
+  apps: isEn ? 'Navigation' : '导航',
+  search: isEn ? 'Search' : '搜索',
+  toc: ui.toc.title,
+  lang: isEn ? '中文' : 'English',
+  dark: isEn ? 'Dark mode' : '深色模式',
+  light: isEn ? 'Light mode' : '浅色模式',
+  repo: isEn ? 'GitHub repository' : 'GitHub 仓库',
+};
 ---
 
 <header
-  class="blog-top-nav"
+  class="sgx-site-nav"
   data-pagefind-ignore
-  data-toc-open-label={ui.toc.open}
-  data-toc-close-label={ui.toc.close}
+  data-sgx-topbar-root
+  data-home-href={withBase(homeHref)}
 >
-  <button
-    class="mobile-menu-toggle"
-    type="button"
-    aria-label="Open navigation menu"
-    aria-expanded="false"
-    aria-controls="mobile-nav-menu"
-    data-mobile-menu-toggle
-  >
-    <Menu size={18} stroke-width={2} />
-  </button>
-
-  <a class="brand" href={withBase(homeHref)} aria-label={`Go to ${site.title} home`}>
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span class="brand-title">
-      <span>{site.title}</span>
-      {brandRouteLabel && <span class="brand-route"> · {brandRouteLabel}</span>}
-    </span>
-  </a>
-
-  <nav class="nav-links" aria-label="Article navigation">
-    {
-      links.map((link) =>
-        link.disabled ? (
-          <span
-            class="nav-link nav-link-placeholder"
-            aria-disabled="true"
-            title="Projects content placeholder"
-          >
-            {link.label}
-          </span>
-        ) : (
-          <a class:list={['nav-link', { active: isActive(link.href) }]} href={withBase(link.href)}>
-            {link.label}
-          </a>
-        ),
-      )
-    }
-  </nav>
-
-  <nav
-    class="mobile-menu-panel"
-    id="mobile-nav-menu"
-    aria-label="Mobile navigation"
-    data-mobile-menu
-  >
-    {
-      links.map((link) =>
-        link.disabled ? (
-          <span class="mobile-menu-link mobile-menu-placeholder" aria-disabled="true">
-            {link.label}
-          </span>
-        ) : (
-          <a
-            class:list={['mobile-menu-link', { active: isActive(link.href) }]}
-            href={withBase(link.href)}
-            data-mobile-menu-link
-          >
-            {link.label}
-          </a>
-        ),
-      )
-    }
-  </nav>
-
-  <div class="nav-actions" aria-label="Page actions">
-    <LangSwitcher lang={lang} zhHref={withBase(zhHref)} enHref={withBase(enHref)} />
-    <a
-      href={site.repository}
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Open GitHub repository"
-      title="GitHub"
-    >
-      <Github size={17} stroke-width={2} />
-    </a>
-    <button type="button" data-theme-toggle aria-label="Switch theme">
-      <Moon class="theme-icon-moon" size={17} stroke-width={2} />
-      <Sun class="theme-icon-sun" size={17} stroke-width={2} />
+  <div class="sgx-topbar">
+    <button type="button" class="sgx-tb-back" data-sgx-back aria-label={t.back}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg
+      >
     </button>
-    {search.enabled && <SiteSearch search={search} lang={lang} />}
+
+    <div class="sgx-tb-pill">
+      <a class="sgx-tb-brand" href={withBase(homeHref)} aria-label={t.home}>
+        <img class="sgx-tb-avatar" src={avatarSrc} alt="" width="28" height="28" />
+        <span class="sgx-tb-text">{site.title}</span>
+      </a>
+      <span class="sgx-tb-mini" data-sgx-mini aria-hidden="true"></span>
+      <button
+        type="button"
+        class="sgx-tb-more"
+        data-sgx-more
+        aria-label={t.more}
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="sgx-more-menu"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+          ><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"
+          ></circle><circle cx="12" cy="19" r="1.9"></circle></svg
+        >
+      </button>
+    </div>
+
+    <button
+      type="button"
+      class="sgx-tb-nav"
+      data-sgx-apps
+      aria-label={t.apps}
+      aria-haspopup="menu"
+      aria-expanded="false"
+      aria-controls="sgx-nav-menu"
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+        ><circle cx="5" cy="5" r="2"></circle><circle cx="12" cy="5" r="2"></circle><circle
+          cx="19"
+          cy="5"
+          r="2"></circle><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"
+        ></circle><circle cx="19" cy="12" r="2"></circle><circle cx="5" cy="19" r="2"
+        ></circle><circle cx="12" cy="19" r="2"></circle><circle cx="19" cy="19" r="2"
+        ></circle></svg
+      >
+    </button>
+  </div>
+
+  <nav class="sgx-menu" id="sgx-nav-menu" aria-label={t.apps} data-sgx-menu="apps" hidden>
+    {
+      links.map((link) => {
+        const active = isActive(link.href);
+        return (
+          <a
+            class="sgx-menu-item"
+            href={withBase(link.href)}
+            aria-current={active ? 'page' : undefined}
+            data-sgx-nav-link
+          >
+            <span>{link.label}</span>
+            {active && (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <div class="sgx-menu" id="sgx-more-menu" role="menu" data-sgx-menu="more" hidden>
+    {
+      search.enabled && (
+        <div class="sgx-menu-search" role="none">
+          <SiteSearch search={search} lang={lang} label={t.search} />
+        </div>
+      )
+    }
     {
       shouldShowTocAction && (
         <button
-          class="toc-action"
           type="button"
-          aria-label={ui.toc.open}
-          aria-expanded="false"
+          class="sgx-menu-item sgx-menu-toc"
+          role="menuitem"
           aria-controls="mobile-toc-menu"
-          title={ui.toc.title}
+          aria-expanded="false"
           data-mobile-toc-trigger
         >
-          <ListTree size={17} stroke-width={2} />
+          <ListTree size={18} stroke-width={2} />
+          <span>{t.toc}</span>
         </button>
       )
     }
+    <a
+      class="sgx-menu-item"
+      role="menuitem"
+      href={langTargetHref}
+      data-lang-switcher
+      data-target-lang={langTarget}
+    >
+      <span class="sgx-menu-glyph" aria-hidden="true">{isEn ? '中' : 'EN'}</span>
+      <span>{t.lang}</span>
+    </a>
+    <button type="button" class="sgx-menu-item" role="menuitem" data-theme-toggle>
+      <Moon class="theme-icon-moon" size={18} stroke-width={2} />
+      <Sun class="theme-icon-sun" size={18} stroke-width={2} />
+      <span class="sgx-theme-label-dark">{t.dark}</span>
+      <span class="sgx-theme-label-light">{t.light}</span>
+    </button>
+    <a class="sgx-menu-item" role="menuitem" href={site.repository} target="_blank" rel="noreferrer">
+      <Github size={18} stroke-width={2} />
+      <span>{t.repo}</span>
+    </a>
   </div>
 
   {
     shouldShowTocAction && (
       <nav
-        class="mobile-toc-panel"
+        class="sgx-menu sgx-toc-panel mobile-toc-panel"
         id="mobile-toc-menu"
         aria-label={ui.toc.title}
         data-nav-toc-menu
         data-toc-root
         data-toc-scroll
+        hidden
       >
         <p>{ui.toc.title}</p>
         <TocTree items={tocItems} idPrefix="nav-toc" navLink />
@@ -185,586 +238,468 @@ const shouldShowTocAction = showTocIcon && tocItems.length > 0;
 </header>
 
 <script>
-  let navigationSequence = 0;
-  let activeNavigationId = 0;
+  const LANG_KEY = 'styrigx-blog-lang';
+  const FADE = 48; // 大标题顶边距顶栏下沿 FADE px 开始淡出，贴到下沿时为 0
 
-  const clearPendingNavigation = (navigationId?: number) => {
-    if (navigationId && navigationId !== activeNavigationId) {
-      return;
+  const root = () => document.querySelector<HTMLElement>('[data-sgx-topbar-root]');
+
+  function menus() {
+    const r = root();
+    return r ? Array.from(r.querySelectorAll<HTMLElement>('[data-sgx-menu], [data-nav-toc-menu]')) : [];
+  }
+
+  function closeAll(except?: HTMLElement) {
+    const r = root();
+    if (!r) return;
+    for (const m of menus()) if (m !== except) m.hidden = true;
+    for (const b of r.querySelectorAll<HTMLElement>('[aria-expanded]')) {
+      const id = b.getAttribute('aria-controls');
+      if (!id || (except && except.id === id)) continue;
+      b.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function toggle(btn: HTMLElement, menu: HTMLElement | null) {
+    if (!menu) return;
+    const open = menu.hidden;
+    closeAll(open ? menu : undefined);
+    menu.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  }
+
+  /** 页面大标题：main 里第一个 h1；首页的 h1 标了 data-sgx-no-hero，不参与交接。 */
+  function findHero() {
+    return document.querySelector<HTMLElement>('main h1:not([data-sgx-no-hero])');
+  }
+
+  let ticking = false;
+  function updateScroll() {
+    ticking = false;
+    const bar = document.querySelector<HTMLElement>('.sgx-topbar');
+    const hero = findHero();
+    const barBottom = bar ? bar.getBoundingClientRect().bottom : 68;
+    let p = 0;
+    if (hero) {
+      // 去掉自身 translateY 的影响：用当前位移反推原始顶边
+      const shift = Number(hero.dataset.sgxShift || 0);
+      const top = hero.getBoundingClientRect().top - shift;
+      p = Math.min(1, Math.max(0, (barBottom + FADE - top) / FADE));
+      hero.style.setProperty('--hero-fade', p.toFixed(3));
+      hero.dataset.sgxShift = String(p * -8);
+    }
+    document.body.classList.toggle('sgx-stuck', !!hero && p >= 1);
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(updateScroll);
+    }
+  }
+
+  function initTopbar() {
+    const r = root();
+    if (!r || r.dataset.sgxReady === 'true') return;
+    r.dataset.sgxReady = 'true';
+
+    const hero = findHero();
+    const mini = r.querySelector<HTMLElement>('[data-sgx-mini]');
+    if (hero) {
+      hero.classList.add('sgx-hero');
+      if (mini) mini.textContent = (hero.textContent || '').trim();
     }
 
-    for (const header of document.querySelectorAll<HTMLElement>('.blog-top-nav')) {
-      delete header.dataset.navPending;
-      header.removeAttribute('aria-busy');
+    r.querySelector('[data-sgx-back]')?.addEventListener('click', () => {
+      if (window.history.length > 1) history.back();
+      else location.href = r.dataset.homeHref || '/';
+    });
 
-      for (const link of header.querySelectorAll<HTMLElement>('[data-nav-link-pending]')) {
-        delete link.dataset.navLinkPending;
+    const apps = r.querySelector<HTMLElement>('[data-sgx-apps]');
+    const more = r.querySelector<HTMLElement>('[data-sgx-more]');
+    const tocBtn = r.querySelector<HTMLElement>('[data-mobile-toc-trigger]');
+    apps?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle(apps, r.querySelector('[data-sgx-menu="apps"]'));
+    });
+    more?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggle(more, r.querySelector('[data-sgx-menu="more"]'));
+    });
+    tocBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const panel = r.querySelector<HTMLElement>('[data-nav-toc-menu]');
+      closeAll();
+      if (panel) panel.hidden = false;
+      more?.setAttribute('aria-expanded', 'false');
+      tocBtn.setAttribute('aria-expanded', 'true');
+    });
+
+    // 当前站点（已高亮）的导航项：只关闭菜单
+    for (const a of r.querySelectorAll<HTMLAnchorElement>('[data-sgx-nav-link][aria-current]')) {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeAll();
+      });
+    }
+
+    // 搜索 / 目录项 / 主题切换后收起菜单（搜索弹窗自己会打开）
+    r.querySelector('[data-site-search-trigger]')?.addEventListener('click', () => closeAll());
+    r.querySelector('[data-nav-toc-menu]')?.addEventListener('click', (e) => {
+      if ((e.target as Element).closest?.('[data-nav-toc-link]')) closeAll();
+    });
+
+    updateScroll();
+  }
+
+  if (!(window as unknown as { __sgxTopbarGlobal?: boolean }).__sgxTopbarGlobal) {
+    (window as unknown as { __sgxTopbarGlobal?: boolean }).__sgxTopbarGlobal = true;
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as Element;
+      const link = target.closest?.<HTMLElement>('[data-lang-switcher]');
+      if (link) {
+        try {
+          localStorage.setItem(LANG_KEY, link.dataset.targetLang || 'zh');
+        } catch {}
       }
-    }
-
-    activeNavigationId = 0;
-  };
-
-  const startPendingNavigation = (sourceElement?: Element) => {
-    const sourceLink = sourceElement?.closest<HTMLAnchorElement>('.blog-top-nav a[href]');
-
-    if (!sourceLink) {
-      return 0;
-    }
-
-    const navigationId = ++navigationSequence;
-    const pendingHref = sourceLink.href;
-    activeNavigationId = navigationId;
-
-    for (const header of document.querySelectorAll<HTMLElement>('.blog-top-nav')) {
-      header.dataset.navPending = 'true';
-      header.setAttribute('aria-busy', 'true');
-
-      for (const link of header.querySelectorAll<HTMLAnchorElement>('a[href]')) {
-        link.toggleAttribute('data-nav-link-pending', link.href === pendingHref);
+      if (target.closest?.('[data-theme-toggle]')) {
+        closeAll();
+        return;
       }
-    }
+      if (!target.closest?.('[data-sgx-menu], [data-nav-toc-menu]')) closeAll();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAll();
+    });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('pageshow', onScroll);
+    document.addEventListener('astro:page-load', initTopbar);
+    document.addEventListener('astro:after-swap', () => document.body.classList.remove('sgx-stuck'));
+  }
 
-    return navigationId;
-  };
-
-  const initMobileTopNav = () => {
-    for (const header of document.querySelectorAll<HTMLElement>('.blog-top-nav')) {
-      const toggle = header.querySelector<HTMLButtonElement>('[data-mobile-menu-toggle]');
-      const menu = header.querySelector<HTMLElement>('[data-mobile-menu]');
-      const tocTrigger = header.querySelector<HTMLButtonElement>('[data-mobile-toc-trigger]');
-      const tocMenu = header.querySelector<HTMLElement>('[data-nav-toc-menu]');
-
-      if (!header.dataset.scrollHideReady) {
-        header.dataset.scrollHideReady = 'true';
-
-        const topRevealOffset = 24;
-        const hideAfterOffset = 96;
-        const scrollIntentDelta = 8;
-        let lastScrollY = window.scrollY;
-        let scrollFrame = 0;
-
-        const setNavHidden = (hidden: boolean) => {
-          header.dataset.navHidden = hidden ? 'true' : 'false';
-          header.toggleAttribute('inert', hidden);
-          header.toggleAttribute('aria-hidden', hidden);
-        };
-
-        const shouldKeepVisible = () =>
-          window.scrollY <= topRevealOffset ||
-          header.dataset.mobileMenuOpen === 'true' ||
-          header.dataset.mobileTocOpen === 'true' ||
-          header.matches(':focus-within');
-
-        const updateNavVisibility = () => {
-          scrollFrame = 0;
-          const currentScrollY = window.scrollY;
-          const scrollDelta = currentScrollY - lastScrollY;
-
-          if (shouldKeepVisible()) {
-            setNavHidden(false);
-            lastScrollY = currentScrollY;
-            return;
-          }
-
-          if (Math.abs(scrollDelta) < scrollIntentDelta) {
-            return;
-          }
-
-          setNavHidden(scrollDelta > 0 && currentScrollY > hideAfterOffset);
-          lastScrollY = currentScrollY;
-        };
-
-        window.addEventListener(
-          'scroll',
-          () => {
-            if (scrollFrame) {
-              return;
-            }
-
-            scrollFrame = window.requestAnimationFrame(updateNavVisibility);
-          },
-          { passive: true },
-        );
-
-        window.addEventListener('resize', () => {
-          if (window.scrollY <= topRevealOffset) {
-            setNavHidden(false);
-          }
-        });
-
-        setNavHidden(false);
-      }
-
-      if (toggle && menu && !header.dataset.mobileMenuReady) {
-        header.dataset.mobileMenuReady = 'true';
-
-        const setMenuOpen = (open: boolean) => {
-          header.dataset.mobileMenuOpen = open ? 'true' : 'false';
-          toggle.setAttribute('aria-expanded', String(open));
-          toggle.setAttribute(
-            'aria-label',
-            open ? 'Close navigation menu' : 'Open navigation menu',
-          );
-        };
-        const setTocOpen = (open: boolean) => {
-          if (!tocTrigger || !tocMenu) {
-            return;
-          }
-
-          const tocOpenLabel = header.dataset.tocOpenLabel ?? 'Open table of contents';
-          const tocCloseLabel = header.dataset.tocCloseLabel ?? 'Close table of contents';
-
-          header.dataset.mobileTocOpen = open ? 'true' : 'false';
-          tocTrigger.setAttribute('aria-expanded', String(open));
-          tocTrigger.setAttribute('aria-label', open ? tocCloseLabel : tocOpenLabel);
-        };
-
-        toggle.addEventListener('click', () => {
-          const nextOpen = header.dataset.mobileMenuOpen !== 'true';
-          setMenuOpen(nextOpen);
-          header.dataset.navHidden = 'false';
-          if (nextOpen) {
-            setTocOpen(false);
-          }
-        });
-
-        menu.addEventListener('click', (event) => {
-          if ((event.target as Element).closest?.('[data-mobile-menu-link]')) {
-            setMenuOpen(false);
-          }
-        });
-
-        tocTrigger?.addEventListener('click', () => {
-          const nextOpen = header.dataset.mobileTocOpen !== 'true';
-          setTocOpen(nextOpen);
-          header.dataset.navHidden = 'false';
-          if (nextOpen) {
-            setMenuOpen(false);
-          }
-        });
-
-        tocMenu?.addEventListener('click', (event) => {
-          if ((event.target as Element).closest?.('[data-nav-toc-link]')) {
-            setTocOpen(false);
-          }
-        });
-
-        document.addEventListener('click', (event) => {
-          if (!header.contains(event.target as Node)) {
-            setMenuOpen(false);
-            setTocOpen(false);
-          }
-        });
-
-        document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape') {
-            setMenuOpen(false);
-            setTocOpen(false);
-          }
-        });
-      }
-    }
-  };
-
-  initMobileTopNav();
-  document.addEventListener('astro:before-preparation', (event) => {
-    const navigationId = startPendingNavigation(event.sourceElement);
-
-    if (!navigationId) {
-      return;
-    }
-
-    const loadPage = event.loader;
-
-    event.loader = async () => {
-      try {
-        await loadPage();
-
-        if (event.signal.aborted) {
-          clearPendingNavigation(navigationId);
-        }
-      } catch (error) {
-        clearPendingNavigation(navigationId);
-        throw error;
-      }
-    };
-  });
-  document.addEventListener('astro:after-swap', () => clearPendingNavigation());
-  document.addEventListener('astro:page-load', initMobileTopNav);
+  initTopbar();
 </script>
 
-<style>
-  .blog-top-nav {
+<style is:global>
+  /* ===== 顶栏 v2.0（与 Book 同款）===== */
+  .sgx-topbar {
     position: fixed;
-    top: 18px;
-    right: 0;
-    left: 0;
-    z-index: 50;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 24px;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    left: 16px;
+    right: 16px;
+    height: 52px;
+    z-index: 55;
+    display: flex;
     align-items: center;
-    width: min(calc(100% - 32px), 900px);
-    min-height: 56px;
-    padding: 10px 14px 10px 18px;
-    margin: 0 auto;
-    border: 1px solid var(--paper-line);
-    border-radius: 8px;
-    background: var(--paper-nav);
-    box-shadow: var(--paper-shadow);
-    opacity: 1;
-    transform: translateY(0);
-    transition:
-      opacity 180ms ease,
-      transform 220ms ease;
-    will-change: transform;
+    gap: 8px;
+    pointer-events: none;
   }
 
-  .blog-top-nav::after {
-    position: absolute;
-    right: 14px;
-    bottom: -1px;
-    left: 14px;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--paper-accent) 6%,
-      var(--paper-accent) 94%,
+  @media (min-width: 980px) {
+    .sgx-topbar {
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: min(calc(100vw - 32px), 1068px);
+    }
+  }
+
+  .sgx-tb-back,
+  .sgx-tb-pill,
+  .sgx-tb-nav {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)) 88%,
       transparent
     );
-    content: '';
-    opacity: 0;
-    pointer-events: none;
-    transform: scaleX(0);
-    transform-origin: center;
-    will-change: opacity, transform;
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    pointer-events: auto;
   }
 
-  .blog-top-nav[data-nav-pending='true'] {
-    cursor: progress;
+  :root[data-theme='dark'] .sgx-tb-back,
+  :root[data-theme='dark'] .sgx-tb-pill,
+  :root[data-theme='dark'] .sgx-tb-nav {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
-  .blog-top-nav[data-nav-pending='true']::after {
-    animation: nav-route-progress 900ms ease-in-out infinite;
-    opacity: 1;
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sgx-tb-back,
+    .sgx-tb-pill,
+    .sgx-tb-nav {
+      background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface));
+    }
   }
 
-  .blog-top-nav[data-nav-hidden='true'] {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(calc(-100% - 24px));
+  .sgx-tb-back,
+  .sgx-tb-nav {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--m-on-surface);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
   }
 
-  .mobile-menu-toggle,
-  .mobile-menu-panel,
-  .mobile-toc-panel {
-    display: none;
+  .sgx-tb-back svg {
+    width: 24px;
+    height: 24px;
   }
 
-  .brand,
-  a.nav-link,
-  a.mobile-menu-link,
-  .mobile-toc-panel a {
-    color: var(--paper-ink);
+  .sgx-tb-nav svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sgx-tb-pill {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 52px;
+    border-radius: 26px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+  }
+
+  .sgx-tb-brand {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 8px 0 6px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    color: var(--m-on-surface);
     text-decoration: none;
   }
 
-  .brand {
+  .sgx-tb-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    object-fit: cover;
+    border: 1px solid var(--m-outline);
+    flex-shrink: 0;
+  }
+
+  /* Styrigx：相对长条水平垂直居中 */
+  .sgx-tb-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--m-on-surface);
+    white-space: nowrap;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  /* 小标题：同一中心位置；最大宽度 = 长条宽 - 104px */
+  .sgx-tb-mini {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) translateY(6px);
+    max-width: calc(100% - 104px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--m-on-surface);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  body.sgx-stuck .sgx-tb-text {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-6px);
+  }
+
+  body.sgx-stuck .sgx-tb-mini {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+
+  .sgx-tb-more {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 0;
+    padding: 0;
+    background: transparent;
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    font-weight: 700;
-  }
-
-  .brand-mark {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: var(--paper-accent);
-    box-shadow: none;
-  }
-
-  .nav-links {
-    display: flex;
     justify-content: center;
-    gap: 4px;
-  }
-
-  .nav-link {
-    position: relative;
-    display: inline-flex;
-    justify-content: center;
-    min-width: 74px;
-    padding: 9px 12px 12px;
-    border-radius: 8px;
-    color: var(--paper-ink-soft);
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-
-  a.nav-link:hover,
-  a.nav-link.active,
-  a.nav-link[data-nav-link-pending] {
-    background: var(--paper-control-hover);
-    color: var(--paper-accent);
-  }
-
-  .nav-link.active::after,
-  .nav-link[data-nav-link-pending]::after {
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--paper-accent);
-    content: '';
-    transform: translateX(-50%);
-  }
-
-  .nav-link[data-nav-link-pending]::after,
-  .brand[data-nav-link-pending] .brand-mark {
-    animation: nav-pending-pulse 620ms ease-in-out infinite alternate;
-  }
-
-  .nav-link-placeholder {
-    color: var(--paper-ink-faint);
-    cursor: default;
-  }
-
-  .nav-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .nav-actions a,
-  .nav-actions button,
-  .mobile-menu-toggle {
-    display: inline-grid;
-    place-items: center;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border: 1px solid var(--paper-line);
-    border-radius: 8px;
-    background: var(--paper-control);
-    color: var(--paper-ink);
+    color: var(--m-on-surface);
     cursor: pointer;
+    transition: background-color 0.15s ease;
   }
 
-  .mobile-menu-toggle,
-  .nav-actions .toc-action {
+  .sgx-tb-back:active,
+  .sgx-tb-nav:active,
+  .sgx-tb-more:active {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+
+  :root[data-theme='dark'] .sgx-tb-back:active,
+  :root[data-theme='dark'] .sgx-tb-nav:active,
+  :root[data-theme='dark'] .sgx-tb-more:active {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .sgx-tb-back:focus-visible,
+  .sgx-tb-nav:focus-visible,
+  .sgx-tb-more:focus-visible,
+  .sgx-tb-brand:focus-visible {
+    outline: 2px solid var(--m-primary);
+    outline-offset: 2px;
+  }
+
+  /* 大标题随滚动淡出（--hero-fade 由脚本写入：0 完全显示，1 完全消失） */
+  .sgx-hero {
+    opacity: calc(1 - var(--hero-fade, 0));
+    transform: translateY(calc(var(--hero-fade, 0) * -8px));
+  }
+
+  /* ===== 菜单（导航圆 / ⋮ / 目录）：锚在顶栏下方 8px，右对齐 ===== */
+  .sgx-menu {
+    position: fixed;
+    top: calc(16px + env(safe-area-inset-top, 0px) + 52px + 8px);
+    right: 16px;
+    z-index: 70;
+    min-width: 200px;
+    padding: 6px;
+    border: 1px solid var(--m-outline);
+    border-radius: 20px;
+    background: var(--m-container-lowest);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.25);
+  }
+
+  @media (min-width: 980px) {
+    .sgx-menu {
+      right: max(16px, calc((100vw - 1068px) / 2));
+    }
+  }
+
+  .sgx-menu[hidden] {
     display: none;
   }
 
-  .nav-actions a:hover,
-  .nav-actions button:hover,
-  .mobile-menu-toggle:hover {
-    background: var(--paper-control-hover);
-    color: var(--paper-accent);
+  .sgx-menu-item,
+  .sgx-menu .sgx-menu-search .site-search-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--m-on-surface);
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
   }
 
-  @media (max-width: 720px) {
-    .blog-top-nav {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 10px;
-      top: 10px;
-      width: min(calc(100% - 20px), 520px);
-      min-height: 54px;
-      padding: 8px 10px 8px 14px;
-      border-radius: 8px;
-    }
-
-    .nav-links {
-      display: none;
-    }
-
-    .mobile-menu-toggle {
-      display: inline-grid;
-    }
-
-    .brand {
-      min-width: 0;
-      gap: 8px;
-      font-size: 0.95rem;
-    }
-
-    .brand-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .brand-mark {
-      flex: 0 0 auto;
-    }
-
-    .nav-actions {
-      gap: 6px;
-    }
-
-    .nav-actions a {
-      display: none;
-    }
-
-    .nav-actions a,
-    .nav-actions button,
-    .mobile-menu-toggle {
-      width: 36px;
-      height: 36px;
-      border-radius: 7px;
-    }
-
-    .nav-actions .toc-action {
-      display: inline-grid;
-    }
-
-    .mobile-menu-panel {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      display: grid;
-      min-width: min(260px, calc(100vw - 20px));
-      gap: 4px;
-      padding: 8px;
-      border: 1px solid var(--paper-line);
-      border-radius: 8px;
-      background: var(--paper-nav);
-      box-shadow: var(--paper-shadow);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-4px);
-      transition:
-        opacity 160ms ease,
-        transform 160ms ease;
-    }
-
-    .mobile-toc-panel {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      display: grid;
-      width: min(300px, calc(100vw - 20px));
-      max-height: min(52vh, 420px);
-      gap: 8px;
-      overflow: auto;
-      padding: 10px;
-      border: 1px solid var(--paper-line);
-      border-radius: 8px;
-      background: var(--paper-nav);
-      box-shadow: var(--paper-shadow);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-4px);
-      transition:
-        opacity 160ms ease,
-        transform 160ms ease;
-    }
-
-    .blog-top-nav[data-mobile-menu-open='true'] .mobile-menu-panel {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    .blog-top-nav[data-mobile-toc-open='true'] .mobile-toc-panel {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    .mobile-menu-link {
-      display: flex;
-      align-items: center;
-      min-height: 38px;
-      padding: 8px 10px;
-      border-radius: 7px;
-      color: var(--paper-ink-soft);
-      font-size: 0.92rem;
-      font-weight: 700;
-    }
-
-    .mobile-menu-link:hover,
-    .mobile-menu-link.active,
-    .mobile-menu-link[data-nav-link-pending] {
-      background: var(--paper-control-hover);
-      color: var(--paper-accent);
-    }
-
-    .mobile-menu-placeholder {
-      color: var(--paper-ink-faint);
-    }
-
-    .mobile-toc-panel p {
-      margin: 0;
-      padding: 2px 2px 4px;
-      color: var(--paper-ink-faint);
-      font-family: var(--font-ui-label);
-      font-size: 0.72rem;
-      font-weight: 700;
-      line-height: 1.2;
-      text-transform: uppercase;
-    }
+  .sgx-menu-item[aria-current] {
+    justify-content: space-between;
+    color: var(--m-primary);
+    font-weight: 700;
   }
 
+  .sgx-menu-item:active,
+  .sgx-menu .sgx-menu-search .site-search-trigger:active,
+  .sgx-menu-item:hover,
+  .sgx-menu .sgx-menu-search .site-search-trigger:hover {
+    background: var(--m-container);
+  }
+
+  .sgx-menu .sgx-menu-search .site-search-trigger {
+    height: auto;
+    box-shadow: none;
+  }
+
+  .sgx-menu-glyph {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  /* 主题项：只显示要切换到的那个 */
+  .sgx-menu .theme-icon-sun,
+  .sgx-menu .sgx-theme-label-light {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .sgx-menu .theme-icon-moon,
+  :root[data-theme='dark'] .sgx-menu .sgx-theme-label-dark {
+    display: none;
+  }
+
+  :root[data-theme='dark'] .sgx-menu .theme-icon-sun,
+  :root[data-theme='dark'] .sgx-menu .sgx-theme-label-light {
+    display: inline;
+  }
+
+  /* 目录：手机才有（桌面右侧已有目录卡片） */
   @media (min-width: 721px) {
-    .brand-route {
-      display: none;
-    }
-
-    .nav-actions .toc-action {
-      display: none;
+    .sgx-menu-toc,
+    .sgx-toc-panel {
+      display: none !important;
     }
   }
 
-  @keyframes nav-route-progress {
-    0% {
-      opacity: 0;
-      transform: scaleX(0);
-    }
-
-    12% {
-      opacity: 1;
-    }
-
-    72% {
-      opacity: 1;
-      transform: scaleX(1);
-    }
-
-    100% {
-      opacity: 0;
-      transform: scaleX(1);
-    }
+  .sgx-toc-panel {
+    width: min(300px, calc(100vw - 32px));
+    max-height: min(60vh, 460px);
+    overflow: auto;
+    padding: 10px;
   }
 
-  @keyframes nav-pending-pulse {
-    from {
-      opacity: 0.42;
-    }
-
-    to {
-      opacity: 1;
-    }
+  .sgx-toc-panel p {
+    margin: 0;
+    padding: 4px 6px 8px;
+    color: var(--m-on-surface-variant);
+    font-size: 12px;
+    font-weight: 700;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .blog-top-nav {
+    .sgx-tb-text,
+    .sgx-tb-mini,
+    .sgx-tb-back,
+    .sgx-tb-nav,
+    .sgx-tb-more {
       transition: none;
-    }
-
-    .blog-top-nav[data-nav-pending='true']::after {
-      animation: none;
-      opacity: 1;
-      transform: scaleX(1);
-    }
-
-    .nav-link[data-nav-link-pending]::after,
-    .brand[data-nav-link-pending] .brand-mark {
-      animation: none;
     }
   }
 </style>

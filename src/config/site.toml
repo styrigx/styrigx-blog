@@ -102,12 +102,12 @@ label = "文章"
 href = "/archives"
 
 [[config.topNav.links]]
-label = "关于"
-href = "/about"
-
-[[config.topNav.links]]
 label = "主站"
 href = "https://styrigx.com"
+
+[[config.topNav.links]]
+label = "书库"
+href = "https://book.styrigx.com"
 
 [config.topNav.en]
 
@@ -120,12 +120,12 @@ label = "Posts"
 href = "/en/archives"
 
 [[config.topNav.en.links]]
-label = "About"
-href = "/en/about"
+label = "Main Site"
+href = "https://styrigx.com/en/"
 
 [[config.topNav.en.links]]
-label = "Main Site"
-href = "https://styrigx.com"
+label = "Library"
+href = "https://book.styrigx.com/en/"
 
 [config.home]
 

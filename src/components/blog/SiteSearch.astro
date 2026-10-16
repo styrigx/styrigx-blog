@@ -9,9 +9,11 @@ import type { PageLang } from '../../utils/lang';
 interface Props {
   search: SiteSearchConfig;
   lang?: PageLang;
+  /** 触发按钮里的文字（放进顶栏 ⋮ 菜单时显示「搜索」）。 */
+  label?: string;
 }
 
-const { search, lang = 'zh' } = Astro.props;
+const { search, lang = 'zh', label } = Astro.props;
 const ui = getUiTextFor(lang);
 const shortcutLabel = search.shortcut === 'mod+k' ? 'Ctrl K / Cmd K' : search.shortcut;
 const projectsRoute = getPageModuleRoute(navfolioConfig, 'projects');
@@ -45,7 +47,8 @@ const vibeRoute = getPageModuleRoute(navfolioConfig, 'vibe');
     title={`${ui.search.title} (${shortcutLabel})`}
     data-site-search-trigger
   >
-    <Search size={17} stroke-width={2} />
+    <Search size={label ? 18 : 17} stroke-width={2} />
+    {label && <span>{label}</span>}
   </button>
 
   <div class="site-search-layer" data-site-search-layer data-site-search-backdrop>
