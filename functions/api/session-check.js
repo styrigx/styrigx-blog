@@ -1,5 +1,5 @@
 /**
- * GET /api/lock-check
+ * GET /api/session-check
  * 供已打开的标签页主动检查会话是否仍然有效。
  * 不在白名单里，走和页面完全相同的中间件校验逻辑。
  * 通过返回 204，失败返回 401 {ok:false, why}（不要 302，fetch 会跟随跳转）。

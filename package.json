@@ -2,7 +2,7 @@
   "name": "styrigx-blog",
   "type": "module",
   "version": "1.0.0",
-  "description": "Sloan Gray 的个人博客（blog.styrigx.com）：基于 Navfolio 定制的中英双语博客。",
+  "description": "Sloan Gray 的个人博客（blog.styrigx.com）：Styrigx UI 中英双语博客。",
   "author": "Sloan Gray",
   "homepage": "https://blog.styrigx.com",
   "repository": {

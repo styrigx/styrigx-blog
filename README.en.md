@@ -20,7 +20,7 @@ Take it apart, then put it back together.
 
 ## What is this
 
-The blog sub-site of Styrigx's Space: notes on AI tools, open-source project retrospectives and self-built infrastructure. It started from the Navfolio theme and now uses the main site's Styrigx UI: the same floating top bar, nine-dot site switcher, wallpaper and appearance settings.
+The blog sub-site of Styrigx's Space: notes on AI tools, open-source project retrospectives and self-built infrastructure. The interface is Styrigx UI, designed in-house and shared with the main site: the same floating top bar, nine-dot site switcher, wallpaper and appearance. The content engine is Navfolio.
 
 The blog only does posts. The home page is the post list; everything else lives on the main site.
 
@@ -80,8 +80,8 @@ Pushing to main runs tests and visual regression in GitHub Actions, then deploys
 
 ## License
 
-Code is MIT (original Navfolio code © dodolalorc, site customization © Sloan Gray). Posts and images are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), not MIT.
+Code is MIT. Design, Styrigx UI and site code © Sloan Gray; the @navfolio/* content engine and the template code still in use © dodolalorc, whose copyright notice is kept as MIT requires. Posts and images are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), not MIT.
 
-Thanks to [Navfolio](https://github.com/navfolio).
+Content engine: [Navfolio](https://github.com/navfolio).
 
 © 2026 Sloan Gray · Powered by Styrigx UI
