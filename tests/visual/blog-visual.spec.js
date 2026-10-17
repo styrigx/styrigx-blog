@@ -90,7 +90,7 @@ test('悬浮顶栏不遮挡首个标题（布局断言）', async ({ page }) => 
     await page.evaluate(() => window.scrollTo(0, 0));
     const result = await page.evaluate(() => {
       const header = document.querySelector('.sgx-topbar');
-      const h1 = document.querySelector('.oui-home h1, .oui-article-wrap h1, .oui-page-title h1');
+      const h1 = document.querySelector('.sgx-subpage-title, .oui-article-wrap h1, .oui-page-title h1');
       if (!header || !h1) return { ok: false, reason: 'header 或 h1 未找到' };
       const hb = header.getBoundingClientRect();
       const ht = h1.getBoundingClientRect();
@@ -189,21 +189,38 @@ test.describe('顶栏 v2.0', () => {
       .toBe(1);
   });
 
-  test('首页不切小标题，Styrigx 常显', async ({ page }) => {
+  test('首页即文章列表：大标题「博客」滚动后交接给顶栏小标题', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('main h1').first()).toHaveText('博客');
     await page.evaluate(() => window.scrollTo(0, 600));
     await page.waitForTimeout(300);
-    expect(await page.evaluate(() => document.body.classList.contains('sgx-stuck'))).toBe(false);
+    expect(await page.evaluate(() => document.body.classList.contains('sgx-stuck'))).toBe(true);
   });
 
-  test('导航菜单：首页 / 文章 / 主站 / 书库，没有关于', async ({ page }) => {
+  test('英文浏览器：/ 跳 /en/ 一次后停住，不循环', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    const page = await ctx.newPage();
+    let navs = 0;
+    page.on('framenavigated', (f) => {
+      if (f === page.mainFrame()) navs++;
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+    const settled = navs;
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).pathname).toBe('/en/');
+    expect(navs, '停在 /en/ 后不再导航').toBe(settled);
+    await ctx.close();
+  });
+
+  test('导航菜单：主站 / 书库 / 博客（三站统一顺序）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-sgx-apps]').click();
     const menu = page.locator('#sgx-nav-menu');
     await expect(menu).toBeVisible();
     const items = await menu.locator('.sgx-menu-item').allTextContents();
-    expect(items.map((t) => t.trim())).toEqual(['首页', '文章', '主站', '书库']);
-    await expect(menu.locator('[aria-current="page"]')).toHaveText('文章');
+    expect(items.map((t) => t.trim())).toEqual(['主站', '书库', '博客']);
+    await expect(menu.locator('[aria-current="page"]')).toHaveText('博客');
     await expect(menu.locator('a[href="https://book.styrigx.com"]')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
