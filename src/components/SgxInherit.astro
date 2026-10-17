@@ -1,0 +1,102 @@
+---
+/**
+ * B2-7：博客继承主站外观 + 网站数字健康。
+ *
+ * 外观（is:inline，渲染前执行）：读主站写的 sgx-ui cookie（Domain=styrigx.com），应用深浅色、调色板、
+ * 字体大小、减弱动效。深浅色两边都能改：主站 cookie 的 mat 与博客 sgx-theme-at 比较，谁后改听谁的；
+ * 调色板等只跟主站。没有 cookie 时保持博客原来的行为（navfolio-theme / 系统）。
+ * ClientRouter 换页后 <html> 属性会被新页面覆盖，所以 astro:after-swap 再应用一次。
+ *
+ * 数字健康：文章页记 post:<slug>（标题取 h1，3 分钟没操作才停表），其他页记 blog，
+ * 上报到主站 https://styrigx.com/api/wellbeing。
+ */
+---
+
+<script is:inline>
+  (() => {
+    const read = () => {
+      const m = document.cookie.match(/(?:^|;\s*)sgx-ui=([^;]*)/);
+      if (!m || !m[1]) return null;
+      try {
+        let b = m[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (b.length % 4) b += '=';
+        return JSON.parse(decodeURIComponent(escape(atob(b))));
+      } catch {
+        return null;
+      }
+    };
+    const apply = () => {
+      try {
+        const ui = read();
+        const root = document.documentElement;
+        const ok = (v) => v === 'light' || v === 'dark' || v === 'system';
+        let local = null;
+        let at = 0;
+        try {
+          local = localStorage.getItem('navfolio-theme');
+          at = Number(localStorage.getItem('sgx-theme-at') || 0) || 0;
+        } catch {}
+        if (ui && ok(ui.mode) && (!ok(local) || (typeof ui.mat === 'number' ? ui.mat : 0) >= at)) {
+          const dark =
+            ui.mode === 'dark' ||
+            (ui.mode === 'system' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+          root.dataset.theme = dark ? 'dark' : 'light';
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        }
+        const pal =
+          ui && typeof ui.pal === 'string' && /^[a-z]{2,16}$/.test(ui.pal) ? ui.pal : 'lake';
+        if (pal !== 'lake') root.setAttribute('data-palette', pal);
+        else root.removeAttribute('data-palette');
+        const fs = ui && (ui.fs === 'small' || ui.fs === 'large') ? ui.fs : '';
+        root.style.fontSize = fs === 'large' ? '112.5%' : fs === 'small' ? '87.5%' : '';
+        root.classList.toggle('reduced-motion', !!(ui && ui.rm === 1));
+      } catch {}
+    };
+    apply();
+    if (!window.__sgxInheritInit) {
+      window.__sgxInheritInit = true;
+      document.addEventListener('astro:after-swap', apply);
+      /* 博客里切深浅色：记修改时间，之后以博客的选择为准，直到主站再改 */
+      document.addEventListener(
+        'click',
+        (e) => {
+          if (e.target.closest?.('[data-theme-toggle]')) {
+            try {
+              localStorage.setItem('sgx-theme-at', String(Date.now()));
+            } catch {}
+          }
+        },
+        true,
+      );
+    }
+  })();
+</script>
+
+<script>
+  import { initWbTrack } from '../scripts/sgx/wb-track.js';
+
+  const ENDPOINT = 'https://styrigx.com/api/wellbeing';
+  let cur: { stop: () => void; flush: () => void } | null = null;
+
+  function start() {
+    if (cur) {
+      cur.flush();
+      cur.stop();
+      cur = null;
+    }
+    const p = location.pathname.replace(/^\/en(?=\/)/, '');
+    const m = p.match(/^\/post\/([A-Za-z0-9_\-.%]{1,80})\/?$/);
+    if (m) {
+      cur = initWbTrack({
+        key: 'post:' + m[1],
+        title: () =>
+          (document.querySelector('main h1')?.textContent || document.title || '').trim(),
+        endpoint: ENDPOINT,
+        idleMs: 180000,
+      });
+    } else {
+      cur = initWbTrack({ key: 'blog', endpoint: ENDPOINT });
+    }
+  }
+  document.addEventListener('astro:page-load', start);
+</script>

@@ -60,7 +60,7 @@ function parseSpaceTokens(layerCss) {
 
   // 浅色：@supports 块内的 :root { ... }（可能有多块，合并）；
   // 深色：.dark { ... }（可能有多块，合并）。
-  // [data-palette=...] 覆盖不在比对范围（博客不支持调色板切换）。
+  // [data-palette=...] 覆盖不在比对范围（B2-7 起博客跟随主站调色板，色板在 src/styles/palettes.css，由 tests/sgx-inherit.test.mjs 校验）。
   const light = new Map();
   const dark = new Map();
   const blockRe = /([^{}]+)\{([^{}]*)\}/g;
@@ -76,7 +76,7 @@ function parseSpaceTokens(layerCss) {
     } else if (selector === '.dark') {
       for (const [k, v] of vars) dark.set(k, v);
     }
-    // [data-palette=...] 覆盖不在比对范围（博客不支持调色板切换）
+    // [data-palette=...] 覆盖不在比对范围（B2-7 起博客跟随主站调色板，色板在 src/styles/palettes.css，由 tests/sgx-inherit.test.mjs 校验）
   }
   return { light, dark };
 }
