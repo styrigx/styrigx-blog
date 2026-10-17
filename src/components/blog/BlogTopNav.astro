@@ -3,7 +3,7 @@
 // - 头像始终显示；Styrigx 在长条内水平垂直居中。
 // - 页面大标题（main h1，首页除外）随滚动淡出；贴到顶栏下沿时完全消失，
 //   同一刻 Styrigx 隐藏、同一位置淡入小标题（= 大标题文字）。
-// - 导航圆菜单：首页 / 文章 / 主站 / 书库（来自 site.toml 的 topNav）。
+// - 导航圆菜单：主站 / 书库 / 博客（三站统一顺序，主站第一；来自 site.toml 的 topNav）。
 // - ⋮ 菜单：搜索、目录（文章页且有目录时，仅手机）、切换语言、深浅色、GitHub 仓库。
 import { Github, ListTree, Moon, Search, Sun } from 'lucide-astro';
 import SiteSearch from './SiteSearch.astro';
@@ -116,8 +116,10 @@ const t = {
         aria-controls="sgx-more-menu"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-          ><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"
-          ></circle><circle cx="12" cy="19" r="1.9"></circle></svg
+          ><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle
+            cx="12"
+            cy="19"
+            r="1.9"></circle></svg
         >
       </button>
     </div>
@@ -213,7 +215,13 @@ const t = {
       <span class="sgx-theme-label-dark">{t.dark}</span>
       <span class="sgx-theme-label-light">{t.light}</span>
     </button>
-    <a class="sgx-menu-item" role="menuitem" href={site.repository} target="_blank" rel="noreferrer">
+    <a
+      class="sgx-menu-item"
+      role="menuitem"
+      href={site.repository}
+      target="_blank"
+      rel="noreferrer"
+    >
       <Github size={18} stroke-width={2} />
       <span>{t.repo}</span>
     </a>
@@ -245,7 +253,9 @@ const t = {
 
   function menus() {
     const r = root();
-    return r ? Array.from(r.querySelectorAll<HTMLElement>('[data-sgx-menu], [data-nav-toc-menu]')) : [];
+    return r
+      ? Array.from(r.querySelectorAll<HTMLElement>('[data-sgx-menu], [data-nav-toc-menu]'))
+      : [];
   }
 
   function closeAll(except?: HTMLElement) {
@@ -375,7 +385,9 @@ const t = {
     window.addEventListener('resize', onScroll);
     window.addEventListener('pageshow', onScroll);
     document.addEventListener('astro:page-load', initTopbar);
-    document.addEventListener('astro:after-swap', () => document.body.classList.remove('sgx-stuck'));
+    document.addEventListener('astro:after-swap', () =>
+      document.body.classList.remove('sgx-stuck'),
+    );
   }
 
   initTopbar();

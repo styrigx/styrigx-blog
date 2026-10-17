@@ -8,8 +8,6 @@ const PAGES = [
   { name: 'home-en', path: '/en/' },
   { name: 'article', path: '/post/2026-10-07-muse-playbook/' },
   { name: 'article-en', path: '/en/post/2026-10-07-muse-playbook/' },
-  { name: 'archive', path: '/archives' },
-  { name: 'archive-en', path: '/en/archives' },
   { name: 'tag', path: '/tags/ai' },
   { name: 'about', path: '/about' },
   { name: 'not-found', path: '/404.html' },
@@ -26,7 +24,11 @@ for (const { name, path } of PAGES) {
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     // 等字体与图片稳定
     await page.evaluate(() => document.fonts.ready);
-    await page.locator('.oui-home, .oui-article-wrap, .oui-archive-wrap, .oui-notfound').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    await page
+      .locator('.oui-article-wrap, .oui-archive-wrap, .oui-notfound')
+      .first()
+      .waitFor({ state: 'visible', timeout: 10000 })
+      .catch(() => {});
     // 无横向溢出断言
     const overflow = await page.evaluate(() => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
@@ -45,11 +47,17 @@ test('search dialog baseline screenshot', async ({ page }) => {
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => document.fonts.ready);
   // 等图片加载完成（替代 networkidle）
-  await page.evaluate(() => Promise.all(
-    Array.from(document.images).map(img =>
-      img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })
-    )
-  ));
+  await page.evaluate(() =>
+    Promise.all(
+      Array.from(document.images).map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise((r) => {
+              img.onload = img.onerror = r;
+            }),
+      ),
+    ),
+  );
   // 打开搜索弹窗：搜索在顶栏 ⋮ 菜单里
   await page.locator('[data-sgx-more]').click();
   const trigger = page.locator('[data-site-search-trigger]').first();
@@ -57,10 +65,15 @@ test('search dialog baseline screenshot', async ({ page }) => {
   await page.waitForSelector('[data-site-search-dialog]', { state: 'visible' });
   await page.locator('[data-site-search-input]').waitFor({ state: 'visible' });
   // 等搜索就绪（状态文本从加载中变为 idle）
-  await page.waitForFunction(() => {
-    const status = document.querySelector('[data-site-search-status]');
-    return status && !/加载|loading/i.test(status.textContent || '');
-  }, { timeout: 10000 }).catch(() => {});
+  await page
+    .waitForFunction(
+      () => {
+        const status = document.querySelector('[data-site-search-status]');
+        return status && !/加载|loading/i.test(status.textContent || '');
+      },
+      { timeout: 10000 },
+    )
+    .catch(() => {});
   await expect(page).toHaveScreenshot('search-dialog.png', { fullPage: false });
 });
 
@@ -77,13 +90,18 @@ test('悬浮顶栏不遮挡首个标题（布局断言）', async ({ page }) => 
     await page.evaluate(() => window.scrollTo(0, 0));
     const result = await page.evaluate(() => {
       const header = document.querySelector('.sgx-topbar');
-      const h1 = document.querySelector('.oui-home h1, .oui-article-wrap h1, .oui-page-title h1');
+      const h1 = document.querySelector(
+        '.sgx-subpage-title, .oui-article-wrap h1, .oui-page-title h1',
+      );
       if (!header || !h1) return { ok: false, reason: 'header 或 h1 未找到' };
       const hb = header.getBoundingClientRect();
       const ht = h1.getBoundingClientRect();
       return { ok: ht.top >= hb.bottom - 1, h1Top: ht.top, headerBottom: hb.bottom };
     });
-    expect(result.ok, `${path} 首个标题被顶栏遮挡 (h1.top=${result.h1Top}, header.bottom=${result.headerBottom})`).toBe(true);
+    expect(
+      result.ok,
+      `${path} 首个标题被顶栏遮挡 (h1.top=${result.h1Top}, header.bottom=${result.headerBottom})`,
+    ).toBe(true);
   }
 });
 
@@ -99,7 +117,7 @@ test.describe('顶栏 v2.0', () => {
   });
 
   test('三块布局：Styrigx 在长条正中，头像可见', async ({ page }) => {
-    await page.goto('/archives/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     const r = await page.evaluate(() => {
       const pill = document.querySelector('.sgx-tb-pill').getBoundingClientRect();
       const text = document.querySelector('.sgx-tb-text').getBoundingClientRect();
@@ -153,41 +171,70 @@ test.describe('顶栏 v2.0', () => {
     expect(sawPartial).toBe(true);
     const end = await state();
     expect(end.stuck).toBe(true);
-    await expect.poll(async () => Number(await page.evaluate(
-      () => getComputedStyle(document.querySelector('.sgx-tb-text')).opacity,
-    ))).toBe(0);
-    await expect.poll(async () => Number(await page.evaluate(
-      () => getComputedStyle(document.querySelector('[data-sgx-mini]')).opacity,
-    ))).toBe(1);
+    await expect
+      .poll(async () =>
+        Number(
+          await page.evaluate(
+            () => getComputedStyle(document.querySelector('.sgx-tb-text')).opacity,
+          ),
+        ),
+      )
+      .toBe(0);
+    await expect
+      .poll(async () =>
+        Number(
+          await page.evaluate(
+            () => getComputedStyle(document.querySelector('[data-sgx-mini]')).opacity,
+          ),
+        ),
+      )
+      .toBe(1);
   });
 
-  test('首页不切小标题，Styrigx 常显', async ({ page }) => {
+  test('首页即文章列表：大标题「博客」滚动后交接给顶栏小标题', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('main h1').first()).toHaveText('博客');
     await page.evaluate(() => window.scrollTo(0, 600));
     await page.waitForTimeout(300);
-    expect(await page.evaluate(() => document.body.classList.contains('sgx-stuck'))).toBe(false);
+    expect(await page.evaluate(() => document.body.classList.contains('sgx-stuck'))).toBe(true);
   });
 
-  test('导航菜单：首页 / 文章 / 主站 / 书库，没有关于', async ({ page }) => {
-    await page.goto('/archives/', { waitUntil: 'domcontentloaded' });
+  test('英文浏览器：/ 跳 /en/ 一次后停住，不循环', async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: 'en-US' });
+    const page = await ctx.newPage();
+    let navs = 0;
+    page.on('framenavigated', (f) => {
+      if (f === page.mainFrame()) navs++;
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+    const settled = navs;
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).pathname).toBe('/en/');
+    expect(navs, '停在 /en/ 后不再导航').toBe(settled);
+    await ctx.close();
+  });
+
+  test('导航菜单：主站 / 书库 / 博客（三站统一顺序）', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-sgx-apps]').click();
     const menu = page.locator('#sgx-nav-menu');
     await expect(menu).toBeVisible();
     const items = await menu.locator('.sgx-menu-item').allTextContents();
-    expect(items.map((t) => t.trim())).toEqual(['首页', '文章', '主站', '书库']);
-    await expect(menu.locator('[aria-current="page"]')).toHaveText('文章');
+    expect(items.map((t) => t.trim())).toEqual(['主站', '书库', '博客']);
+    await expect(menu.locator('[aria-current="page"]')).toHaveText('博客');
     await expect(menu.locator('a[href="https://book.styrigx.com"]')).toHaveCount(1);
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
   });
 
   test('⋮ 菜单：搜索、语言、主题、GitHub', async ({ page }) => {
-    await page.goto('/archives/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-sgx-more]').click();
     const menu = page.locator('#sgx-more-menu');
     await expect(menu).toBeVisible();
     await expect(menu.locator('[data-site-search-trigger]')).toBeVisible();
-    await expect(menu.locator('[data-lang-switcher]')).toHaveAttribute('href', '/en/archives');
+    await expect(menu.locator('[data-lang-switcher]')).toHaveAttribute('href', '/en/');
     const before = await page.evaluate(() => document.documentElement.dataset.theme);
     await menu.locator('[data-theme-toggle]').click();
     await expect(page.locator('html')).toHaveAttribute(

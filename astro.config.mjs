@@ -55,6 +55,11 @@ export default defineConfig({
   // Keep Hugo-style trailing slashes (/post/<slug>/). Giscus binds comments
   // by pathname, so the slash must match the old Hugo URLs exactly.
   trailingSlash: 'always',
+  // 2026-10 简化：原首页删除，/ 即文章列表；旧归档地址跳回列表
+  redirects: {
+    '/archives': '/',
+    '/en/archives': '/en/',
+  },
   markdown: {
     remarkPlugins: astroPluginConfig.remarkPlugins,
     rehypePlugins: astroPluginConfig.rehypePlugins,
