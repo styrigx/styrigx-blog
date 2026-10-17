@@ -1,16 +1,22 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
-import BlogArchiveHeader from '../../components/blog/BlogArchiveHeader.astro';
-import BlogTopNav from '../../components/blog/BlogTopNav.astro';
+import BaseHead from '../BaseHead.astro';
+import Footer from '../Footer.astro';
+import BlogTopNav from './BlogTopNav.astro';
 import { getSiteConfig } from '../../data/site';
 import { slugifyGroupName } from '../../utils/content-groups';
 import { sortByDateDesc } from '../../utils/content-dates';
 import { getHtmlLangFor, getUiTextFor } from '../../utils/ui-text';
-import { pageLangOf, postSlugFromId, postUrl, tagUrl } from '../../utils/lang';
+import { pageLangOf, postSlugFromId, postUrl, tagUrl, type PageLang } from '../../utils/lang';
 
-const lang = 'en';
+// 博客唯一的列表页（= 博客首页）。2026-10 简化：删掉原首页（Styrigx 大字 + 最近文章卡），
+// / 直接是文章列表；标题区与 Book 的 .subpage-head 同规格（居中、主题色大字、下方内容区），
+// 让主站 / 书库 / 博客 切换时看起来是同一套网站。
+interface Props {
+  lang: PageLang;
+}
+const { lang } = Astro.props;
+const isEn = lang === 'en';
 const siteConfig = await getSiteConfig();
 const { site, theme, pages } = siteConfig;
 const palette = theme.palette;
@@ -18,10 +24,10 @@ const htmlLang = getHtmlLangFor(lang);
 const ui = getUiTextFor(lang);
 const pageMeta = pages.blog;
 const posts = sortByDateDesc(
-  await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === 'en'),
+  await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === lang),
 );
-const pageTitle = ui.groups.yearArchives;
-const pageNote = ui.groups.yearArchivesNote;
+const pageTitle = isEn ? 'Blog' : '博客';
+const pageNote = isEn ? (pageMeta.note ?? '') : pageMeta.note;
 
 // Collect all tags for filter pills
 const tagCounts = new Map<string, number>();
@@ -48,12 +54,58 @@ function postTagHref(tag: string) {
 <!doctype html>
 <html lang={htmlLang} data-palette={palette}>
   <head>
-    <BaseHead title={`${pageTitle} | ${site.title}`} description={pageNote} />
+    <BaseHead
+      title={`${pageTitle} | ${site.title}`}
+      description={pageNote || site.pageDescription}
+    />
+    <script is:inline>
+      (() => {
+        try {
+          const KEY = 'styrigx-blog-lang';
+          const ua = navigator.userAgent || '';
+          const isBot =
+            /bot|crawl|spider|slurp|mediapartners|baidu|bingpreview|facebookexternalhit|twitterbot|linkedinbot|embedly|quora|pinterest|slackbot|discordbot|telegrambot|whatsapp|applebot|duckduckbot|yandex|sogou|exabot|semrush|ahrefs/i.test(
+              ua,
+            );
+          if (isBot) return;
+          const stored = localStorage.getItem(KEY);
+          if (stored === 'en') {
+            location.replace('/en/');
+            return;
+          }
+          if (stored === 'zh') return;
+          const navLang = (navigator.language || '').toLowerCase();
+          if (navLang === 'en' || navLang.startsWith('en-')) {
+            location.replace('/en/');
+          }
+        } catch {}
+      })();
+    </script>
     <style>
       main {
         width: min(100%, var(--layout-shell-width));
         max-width: none;
-        padding: 118px var(--layout-page-gutter) var(--layout-page-bottom);
+        padding: 0 var(--layout-page-gutter) var(--layout-page-bottom);
+      }
+
+      /* 标题区：与 Book .subpage-head / .subpage-title 同规格 */
+      .sgx-subpage-head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        text-align: center;
+        min-height: max(280px, 35svh);
+        padding: calc(84px + env(safe-area-inset-top, 0px)) 20px 76px;
+      }
+
+      .sgx-subpage-title {
+        margin: 0;
+        font-size: 40px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        color: var(--m-primary, var(--paper-accent));
       }
 
       .filter-bar {
@@ -77,7 +129,9 @@ function postTagHref(tag: string) {
         font-size: 0.78rem;
         font-weight: 700;
         text-decoration: none;
-        transition: border-color 0.15s, color 0.15s;
+        transition:
+          border-color 0.15s,
+          color 0.15s;
       }
 
       .filter-pill:hover {
@@ -217,10 +271,6 @@ function postTagHref(tag: string) {
       }
 
       @media (max-width: 720px) {
-        main {
-          padding-top: 88px;
-        }
-
         .note-entry {
           grid-template-columns: 32px minmax(0, 1fr);
           gap: 10px;
@@ -238,28 +288,27 @@ function postTagHref(tag: string) {
     </style>
   </head>
   <body>
-    <BlogTopNav lang="en" zhHref="/archives" enHref="/en/archives" />
+    <BlogTopNav lang={lang} zhHref="/" enHref="/en/" />
     <main data-pagefind-body class="oui-archive-wrap">
-      <BlogArchiveHeader
-        kicker={pageMeta.kicker}
-        title={pageMeta.title}
-        subtitle={pageMeta.subtitle}
-        note={pageMeta.note}
-      />
+      <header class="sgx-subpage-head">
+        <h1 class="sgx-subpage-title">{pageTitle}</h1>
+      </header>
 
       <div class="filter-bar">
         <span class="filter-pill active">
-          <span>●</span> All articles <span class="count">{posts.length}</span>
+          <span>●</span>
+          {isEn ? 'All articles' : '全部文章'}
+          <span class="count">{posts.length}</span>
         </span>
-        {allTags.slice(0, 6).map(([tag, count]) => (
-          <a class="filter-pill" href={postTagHref(tag)}>
-            {tag} <span class="count">{count}</span>
-          </a>
-        ))}
+        {
+          allTags.slice(0, 6).map(([tag, count]) => (
+            <a class="filter-pill" href={postTagHref(tag)}>
+              {tag} <span class="count">{count}</span>
+            </a>
+          ))
+        }
         <span class="filter-links">
-          <a href="/en/tags">Tags</a>
-          <span>·</span>
-          <a href="/en/archives">Years</a>
+          <a href={isEn ? '/en/tags/' : '/tags/'}>{isEn ? 'Tags' : '标签'}</a>
         </span>
       </div>
 
@@ -283,9 +332,7 @@ function postTagHref(tag: string) {
                       <a href={postTagHref(tag)}>#{tag}</a>
                     ))}
                   </div>
-                  {post.data.description && (
-                    <p class="note-desc">{post.data.description}</p>
-                  )}
+                  {post.data.description && <p class="note-desc">{post.data.description}</p>}
                 </div>
               </li>
             ))}
@@ -295,6 +342,6 @@ function postTagHref(tag: string) {
         )
       }
     </main>
-    <Footer lang="en" />
+    <Footer lang={lang} />
   </body>
 </html>

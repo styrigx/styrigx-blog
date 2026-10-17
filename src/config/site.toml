@@ -94,14 +94,6 @@ github = "https://github.com/styrigx"
 avatar = "/images/avatar.png"
 
 [[config.topNav.links]]
-label = "首页"
-href = "/"
-
-[[config.topNav.links]]
-label = "文章"
-href = "/archives"
-
-[[config.topNav.links]]
 label = "主站"
 href = "https://styrigx.com"
 
@@ -109,15 +101,11 @@ href = "https://styrigx.com"
 label = "书库"
 href = "https://book.styrigx.com"
 
+[[config.topNav.links]]
+label = "博客"
+href = "/"
+
 [config.topNav.en]
-
-[[config.topNav.en.links]]
-label = "Home"
-href = "/en/"
-
-[[config.topNav.en.links]]
-label = "Posts"
-href = "/en/archives"
 
 [[config.topNav.en.links]]
 label = "Main Site"
@@ -126,6 +114,10 @@ href = "https://styrigx.com/en/"
 [[config.topNav.en.links]]
 label = "Library"
 href = "https://book.styrigx.com/en/"
+
+[[config.topNav.en.links]]
+label = "Blog"
+href = "/en/"
 
 [config.home]
 

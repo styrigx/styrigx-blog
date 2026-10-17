@@ -15,10 +15,7 @@ import { pageLangOf, tagUrl } from '../../utils/lang';
 const lang = 'zh';
 
 export async function getStaticPaths() {
-  const posts = await getCollection(
-    'blog',
-    ({ data }) => !data.draft && pageLangOf(data) === 'zh',
-  );
+  const posts = await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === 'zh');
 
   return getAllTags(posts).map((tag) => ({
     params: { tag: tag.slug },
@@ -64,14 +61,10 @@ const ui = getUiTextFor(lang);
     </style>
   </head>
   <body>
-    <BlogTopNav
-      lang="zh"
-      zhHref={tagUrl('zh', tag.slug)}
-      enHref="/en/"
-    />
+    <BlogTopNav lang="zh" zhHref={tagUrl('zh', tag.slug)} enHref="/en/" />
     <main data-pagefind-body class="oui-archive-wrap">
       <div class="tag-body">
-        <BackLink href="/archives" label={ui.groups.back} />
+        <BackLink href="/" label={ui.groups.back} />
         <BlogArchiveHeader
           kicker={ui.groups.tagCloudKicker}
           title={`#${tag.name}`}

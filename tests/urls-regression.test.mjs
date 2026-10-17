@@ -109,12 +109,30 @@ describe('旧网址回归（换皮不改路由）', () => {
     assert.match(html, /giscus/i, 'Giscus 评论保留');
   });
 
-  it('首页是 One UI 首页（hero + 文章卡）', async () => {
+  it('首页即文章列表（Book 同款标题区 + 文章列表）', async () => {
     const res = await fetch(base + '/');
     const html = await res.text();
-    assert.match(html, /oui-hero/, '应有 hero 区');
-    assert.match(html, /oui-post-card/, '应有文章卡');
-    assert.match(html, /拆开世界是为了看懂它/, '座右铭保留');
+    assert.match(html, /sgx-subpage-title[^>]*>博客</, '应有居中大标题「博客」');
+    assert.match(html, /note-entry/, '应有文章列表');
+    assert.doesNotMatch(html, /oui-hero/, '旧首页 hero 已删除');
+  });
+
+  it('旧归档地址跳回列表', async () => {
+    for (const [from, to] of [
+      ['/archives/', '/'],
+      ['/en/archives/', '/en/'],
+    ]) {
+      const html = await (await fetch(base + from)).text();
+      assert.match(html, new RegExp(`url=${to.replace(/\//g, '\\/')}"`), `${from} 应跳到 ${to}`);
+    }
+  });
+
+  it('导航顺序：主站 / 书库 / 博客', async () => {
+    const html = await (await fetch(base + '/')).text();
+    const hrefs = [
+      ...html.matchAll(/class="sgx-menu-item"[^>]*href="([^"]+)"[^>]*data-sgx-nav-link/g),
+    ].map((m) => m[1]);
+    assert.deepEqual(hrefs, ['https://styrigx.com', 'https://book.styrigx.com', '/']);
   });
 
   it('404.html 存在且为 One UI 样式', async () => {
