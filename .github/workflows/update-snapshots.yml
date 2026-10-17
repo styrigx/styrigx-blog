@@ -43,8 +43,10 @@ jobs:
           git add tests/visual/blog-visual.spec.js-snapshots
           git diff --cached --quiet && echo "基线无变化" && exit 0
           git diff --cached --stat
-          git commit -m "[UI] CI 更新视觉基线"
-          git push
+          # 只提交截图：跳过 pre-commit（lint-staged 会对全仓跑 format:check，与截图无关）
+          git commit --no-verify -m "[UI] CI 更新视觉基线"
+          # checkout@v4 传 ref 是 detached HEAD，没有本地分支和 upstream，裸 git push 会失败；用显式 refspec
+          git push origin "HEAD:${{ inputs.branch }}"
           echo "pushed=true" >> "$GITHUB_OUTPUT"
       # GITHUB_TOKEN 的 push 不会触发 deploy.yml，这里显式 dispatch 一次（非 main 分支不部署生产）
       - name: Trigger CI on the updated branch
