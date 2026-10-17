@@ -1,14 +1,14 @@
 /**
- * GET /api/lock-check 测试
+ * GET /api/session-check 测试
  * 用 Node 内置 test runner：node --test tests/
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { onRequestGet } from '../functions/api/lock-check.js';
+import { onRequestGet } from '../functions/api/session-check.js';
 
 function mockContext(cookieHeader, env) {
   return {
-    request: new Request('https://blog.styrigx.com/api/lock-check', {
+    request: new Request('https://blog.styrigx.com/api/session-check', {
       headers: cookieHeader ? { Cookie: cookieHeader } : {},
     }),
     env: env || {},

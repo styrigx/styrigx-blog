@@ -20,7 +20,7 @@
 
 ## 这是什么
 
-Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复盘和自建的基础设施。基于 Navfolio 主题改成主站同一套 Styrigx UI：悬浮顶栏、九宫格切站、壁纸和外观设置都和主站一致。
+Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复盘和自建的基础设施。界面是自研的 Styrigx UI，与主站同一套设计：悬浮顶栏、九宫格切站、壁纸和外观都跟随主站。内容引擎用的是 Navfolio。
 
 博客只管文章。打开首页就是文章列表，其他东西都放在主站。
 
@@ -80,8 +80,8 @@ bun run preview    # 预览构建结果
 
 ## 许可
 
-代码 MIT（原始 Navfolio 代码 © dodolalorc，站点定制 © Sloan Gray）。文章和图片采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)，不属于 MIT。
+代码 MIT。设计、Styrigx UI 与站点代码 © Sloan Gray；内容引擎 @navfolio/* 及沿用的模板代码 © dodolalorc，按 MIT 要求保留其版权声明。文章和图片采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)，不属于 MIT。
 
-感谢 [Navfolio](https://github.com/navfolio)。
+内容引擎：[Navfolio](https://github.com/navfolio)。
 
 © 2026 Sloan Gray · Powered by Styrigx UI

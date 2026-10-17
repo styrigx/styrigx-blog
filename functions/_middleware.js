@@ -38,7 +38,6 @@ const ALLOWLIST_EXACT = new Set([
   '/favicon.ico',
   '/manifest.json',
   '/browserconfig.xml',
-  '/api/key-fingerprint',
 ]);
 
 /* 白名单：静态资源后缀（不含正文内容） */
