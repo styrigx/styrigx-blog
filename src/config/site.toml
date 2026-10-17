@@ -91,7 +91,7 @@ role = "拆开世界是为了看懂它，再把它装回去是为了相信它。
 email = "styrigx@gmail.com"
 website = "https://styrigx.com/"
 github = "https://github.com/styrigx"
-avatar = "/images/avatar.png"
+avatar = "https://styrigx.com/avatar/512.webp"
 
 [[config.topNav.links]]
 label = "主站"
