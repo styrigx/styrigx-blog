@@ -90,7 +90,9 @@ test('悬浮顶栏不遮挡首个标题（布局断言）', async ({ page }) => 
     await page.evaluate(() => window.scrollTo(0, 0));
     const result = await page.evaluate(() => {
       const header = document.querySelector('.sgx-topbar');
-      const h1 = document.querySelector('.sgx-subpage-title, .oui-article-wrap h1, .oui-page-title h1');
+      const h1 = document.querySelector(
+        '.sgx-subpage-title, .oui-article-wrap h1, .oui-page-title h1',
+      );
       if (!header || !h1) return { ok: false, reason: 'header 或 h1 未找到' };
       const hb = header.getBoundingClientRect();
       const ht = h1.getBoundingClientRect();

@@ -58,32 +58,31 @@ function postTagHref(tag: string) {
       title={`${pageTitle} | ${site.title}`}
       description={pageNote || site.pageDescription}
     />
-    {/* 只有中文首页做语言跳转；/en/ 也用这个组件，不能再跳 /en/，否则英文浏览器会无限 reload */}
-    {!isEn && (
-      <script is:inline>
-        (() => {
-          try {
-            const KEY = 'styrigx-blog-lang';
-            const ua = navigator.userAgent || '';
-            const isBot =
-              /bot|crawl|spider|slurp|mediapartners|baidu|bingpreview|facebookexternalhit|twitterbot|linkedinbot|embedly|quora|pinterest|slackbot|discordbot|telegrambot|whatsapp|applebot|duckduckbot|yandex|sogou|exabot|semrush|ahrefs/i.test(
-                ua,
-              );
-            if (isBot) return;
-            const stored = localStorage.getItem(KEY);
-            if (stored === 'en') {
-              location.replace('/en/');
-              return;
-            }
-            if (stored === 'zh') return;
-            const navLang = (navigator.language || '').toLowerCase();
-            if (navLang === 'en' || navLang.startsWith('en-')) {
-              location.replace('/en/');
-            }
-          } catch {}
-        })();
-      </script>
-    )}
+    <script is:inline>
+      (() => {
+        try {
+          // 只有中文首页做语言跳转；/en/ 也用这个组件，不能再跳 /en/，否则英文浏览器会无限 reload
+          if (location.pathname.startsWith('/en')) return;
+          const KEY = 'styrigx-blog-lang';
+          const ua = navigator.userAgent || '';
+          const isBot =
+            /bot|crawl|spider|slurp|mediapartners|baidu|bingpreview|facebookexternalhit|twitterbot|linkedinbot|embedly|quora|pinterest|slackbot|discordbot|telegrambot|whatsapp|applebot|duckduckbot|yandex|sogou|exabot|semrush|ahrefs/i.test(
+              ua,
+            );
+          if (isBot) return;
+          const stored = localStorage.getItem(KEY);
+          if (stored === 'en') {
+            location.replace('/en/');
+            return;
+          }
+          if (stored === 'zh') return;
+          const navLang = (navigator.language || '').toLowerCase();
+          if (navLang === 'en' || navLang.startsWith('en-')) {
+            location.replace('/en/');
+          }
+        } catch {}
+      })();
+    </script>
     <style>
       main {
         width: min(100%, var(--layout-shell-width));
