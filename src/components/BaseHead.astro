@@ -5,6 +5,8 @@ import FallbackImage from '../assets/figure/fail-loading-image.png';
 import { getSiteConfig } from '../data/site';
 import '../styles/global.css';
 import '../styles/one-ui.css';
+import '../styles/palettes.css';
+import SgxInherit from './SgxInherit.astro';
 
 interface Props {
   title: string;
@@ -24,6 +26,7 @@ const { site, fonts } = await getSiteConfig();
   site={site}
   fonts={fonts}
 />
+<SgxInherit />
 
 <!-- 自托管字体：public/fonts/LXGWWenKai-Regular.woff2（正文）+ *-ui-subset.woff2（界面），由主题按 site.toml 的 [config.fonts] 生成 @font-face -->
 <style>
