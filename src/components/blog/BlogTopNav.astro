@@ -66,7 +66,8 @@ function isActive(href: string) {
 const shouldShowTocAction = showTocIcon && tocItems.length > 0;
 const langTargetHref = withBase(isEn ? zhHref : enHref);
 const langTarget: PageLang = isEn ? 'zh' : 'en';
-const avatarSrc = withBase('/images/avatar.png');
+/* 头像由主站统一管理（设置页可换），这里直接读主站 /avatar/，换头像后跟着变 */
+const avatarSrc = 'https://styrigx.com/avatar/96.webp';
 const t = {
   back: isEn ? 'Back' : '返回',
   home: isEn ? `${site.title} home` : `${site.title} 首页`,

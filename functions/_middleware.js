@@ -37,7 +37,6 @@ const ALLOWLIST_EXACT = new Set([
   '/robots.txt',
   '/favicon.ico',
   '/manifest.json',
-  '/browserconfig.xml',
 ]);
 
 /* 白名单：静态资源后缀（不含正文内容） */
