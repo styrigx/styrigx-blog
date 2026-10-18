@@ -1,0 +1,4 @@
+# 带内容哈希的构建产物（/_astro/xxx.<hash>.js|css）长期缓存。
+# 以前 Pages Functions 会吞掉 _headers，所以这条写在 middleware 里；现在 Pages 只放静态文件，回到这里。
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

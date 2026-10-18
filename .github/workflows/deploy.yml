@@ -16,24 +16,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Assert no legacy key names
+      - name: Assert zero-key Pages
+        # 博客的会话检查全在主站鉴权网关（styrigx-auth-gateway）。本仓库不许有 Pages Functions、
+        # 不许出现任何密钥变量名或会话 cookie 验签代码；public/_worker.js 只做 pages.dev 跳回。
         run: |
-          # 禁止旧变量名 SGX_ED25519_*（已改名为 SGX_LOCK_*）；不扫描 .github/ 避免自匹配
-          if grep -rn "SGX_ED25519_" --include="*.js" --include="*.ts" --include="*.mjs" functions/ 2>/dev/null; then
-            echo "ERROR: Found SGX_ED25519_* (use SGX_LOCK_* per key spec v1.0)."
-            exit 1
+          if [ -e functions ]; then echo "FAIL: functions/ must not exist (auth lives in the gateway)"; exit 1; fi
+          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-verified" public/ src/ --include="*.js" --include="*.mjs" --include="*.ts"; then
+            echo "FAIL: blog must not hold keys or verify sessions"; exit 1
           fi
-          echo "OK: no legacy key names."
-
-      - name: Key distribution static check
-        # blog 是子站：functions/ 里不得出现任何 *_PRIVATE 或 SGX_STEPUP_*。
-        # 私钥只在主站，STEPUP 密钥对只在主站。出现即构建失败。
-        run: |
-          if grep -rn --include="*.js" -E "_PRIVATE|SGX_STEPUP_" functions/; then
-            echo "FAIL: functions/ must not contain *_PRIVATE or SGX_STEPUP_"
-            exit 1
-          fi
-          echo "OK: key distribution check passed."
+          echo "OK: zero-key Pages."
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -75,6 +66,18 @@ jobs:
             test-results/
             playwright-report/
 
+      - name: Gate check - gateway must already guard blog pages
+        # 本站 Pages 没有验票代码了，必须先确认网关已经挂在 blog.styrigx.com 上，否则部署后页面不设防。
+        # 未登录访问首页必须是网关回的 302（带 X-SGX-Runtime: worker）。不满足就不部署。
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -u
+          hdr=$(curl -sS -o /dev/null -D - -w 'HTTP_CODE:%{http_code}\n' https://blog.styrigx.com/ | tr -d '\r')
+          code=$(printf '%s' "$hdr" | sed -n 's/^HTTP_CODE://p')
+          rt=$(printf '%s' "$hdr" | awk -F': ' 'tolower($1)=="x-sgx-runtime"{print $2}')
+          echo "blog.styrigx.com/ -> $code runtime=${rt:-none}"
+          [ "$code" = "302" ] && [ "$rt" = "worker" ] || { echo "::error::gateway is not guarding blog.styrigx.com yet; deploy the gateway first"; exit 1; }
+
       - name: Deploy to Cloudflare Pages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
@@ -82,3 +85,36 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=styrigx-blog --commit-dirty=true
+
+      - name: Smoke test - every page directory is behind the gateway
+        # 只发不带 cookie 的只读请求。dist/ 里每个页面所在的一级目录各抽一个页面，未登录必须是网关回的 302；
+        # 新增页面目录忘了在网关 wrangler.toml 登记 → 这里红。静态资源不能过网关；pages.dev 不能直接打开。
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -u
+          ok=0
+          probe() { # url 期望状态码 期望runtime(worker|none)
+            for i in 1 2 3; do
+              hdr=$(curl -sS -o /dev/null -D - -w 'HTTP_CODE:%{http_code}\n' "$1" | tr -d '\r' || true)
+              code=$(printf '%s' "$hdr" | sed -n 's/^HTTP_CODE://p')
+              rt=$(printf '%s' "$hdr" | awk -F': ' 'tolower($1)=="x-sgx-runtime"{print $2}')
+              echo "$1 -> $code runtime=${rt:-none} (try $i)"
+              if [ "$code" = "$2" ] && [ "${rt:-none}" = "$3" ]; then return 0; fi
+              sleep 5
+            done
+            echo "::error::$1 expected $2 runtime=$3"; return 1
+          }
+          paths=$(cd dist && find . -name '*.html' ! -name '404.html' | sed 's|^\.||; s|index\.html$||' | awk -F/ '{k=($2==""?"/":$2); if(!(k in s)){s[k]=1; print}}')
+          for p in $paths /rss.xml /sitemap-index.xml; do probe "https://blog.styrigx.com$p" 302 worker || ok=1; done
+          asset=$(cd dist && find _astro -name '*.css' | head -1)
+          [ -n "$asset" ] && { probe "https://blog.styrigx.com/$asset" 200 none || ok=1; }
+          hdr=$(curl -sS -o /dev/null -D - -w 'HTTP_CODE:%{http_code}\n' https://styrigx-blog.pages.dev/ | tr -d '\r' || true)
+          code=$(printf '%s' "$hdr" | sed -n 's/^HTTP_CODE://p')
+          loc=$(printf '%s' "$hdr" | awk -F': ' 'tolower($1)=="location"{print $2}')
+          echo "pages.dev / -> $code $loc"
+          case "$code $loc" in
+            "301 https://blog.styrigx.com/") ;;
+            "302 https://styrigx.cloudflareaccess.com/"*) ;;
+            *) echo "::error::pages.dev neither redirected nor sat behind Access"; ok=1 ;;
+          esac
+          exit $ok
