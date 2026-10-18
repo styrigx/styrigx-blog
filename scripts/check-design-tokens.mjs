@@ -1,10 +1,10 @@
 // 设计令牌一致性校验：博客的 --m-* / --glass-* 必须与主站
-// styrigx-space main 分支 assets/css/input.css 的 @layer tokens 逐项一致。
+// styrigx-space main 分支 web/assets/css/input.css 的 @layer tokens 逐项一致。
 // 主站是唯一来源，博客只做同步，不另维护一套。
 // 用法：node scripts/check-design-tokens.mjs
 
 const SPACE_CSS_URL =
-  'https://raw.githubusercontent.com/styrigx/styrigx-space/main/assets/css/input.css';
+  'https://raw.githubusercontent.com/styrigx/styrigx-space/main/web/assets/css/input.css';
 const BLOG_CSS_PATH = new URL('../src/styles/one-ui.css', import.meta.url);
 
 /** 提炼 @layer tokens { ... } 块（大括号配对）。 */

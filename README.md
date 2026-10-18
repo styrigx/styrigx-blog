@@ -74,7 +74,7 @@ bun run preview    # 预览构建结果
 - `src/config/site.toml`：站点配置，标题、字体、评论、主题色。
 - `src/components/`、`src/layouts/`、`src/pages/`：覆盖主题默认的组件和页面。
 - `src/styles/`：全局样式和 Styrigx UI 样式。
-- `functions/`：Pages Functions，和主站共用锁屏会话。
+- 锁屏：会话检查全在主站鉴权网关（styrigx-space 仓库 `workers/auth-gateway`），本站 Pages 只放静态文件、不持任何钥匙；`public/_worker.js` 只把 pages.dev 跳回正式域名。
 - `scripts/fonts/`、`public/fonts/`：字体子集脚本和自托管字体。
 - `tests/`：单元测试和视觉回归。
 

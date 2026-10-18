@@ -74,7 +74,7 @@ Pushing to main runs tests and visual regression in GitHub Actions, then deploys
 - `src/config/site.toml`: site config: title, fonts, comments, theme colors.
 - `src/components/`, `src/layouts/`, `src/pages/`: components and pages overriding the theme defaults.
 - `src/styles/`: global styles and Styrigx UI styles.
-- `functions/`: Pages Functions sharing the main site's lock-screen session.
+- Lock screen: session checks live in the main site's auth gateway (`workers/auth-gateway` in styrigx-space); this Pages project serves static files only and holds no keys. `public/_worker.js` just redirects pages.dev to the canonical domain.
 - `scripts/fonts/`, `public/fonts/`: font subset scripts and self-hosted fonts.
 - `tests/`: unit and visual regression tests.
 
