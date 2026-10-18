@@ -2,7 +2,7 @@
  * SGX 子站自动锁定检查
  * 主站「立即锁定」后，已打开的 blog 标签页切回来时自动跳到锁屏。
  *
- * 原理：sgx-verified 是 HttpOnly，子域名不同源，BroadcastChannel 收不到，
+ * 原理：会话 Cookie 是 HttpOnly，子域名不同源，BroadcastChannel 收不到，
  * 只能由页面在变为可见时主动问服务器 /api/session-check。
  */
 (function () {
