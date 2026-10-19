@@ -105,8 +105,8 @@ test('悬浮顶栏不遮挡首个标题（布局断言）', async ({ page }) => 
   }
 });
 
-// ===== 顶栏 v2.0（与 Book 同款）=====
-test.describe('顶栏 v2.0', () => {
+// ===== 顶栏 v3（与主站 Space 同款）=====
+test.describe('顶栏 v3', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
       try {
@@ -116,29 +116,61 @@ test.describe('顶栏 v2.0', () => {
     });
   });
 
-  test('三块布局：Styrigx 在长条正中，头像可见', async ({ page }) => {
+  test('三块布局：左圆九宫格 · 长条（返回 / Styrigx 正中 / ⋮）· 右圆头像', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     const r = await page.evaluate(() => {
-      const pill = document.querySelector('.sgx-tb-pill').getBoundingClientRect();
-      const text = document.querySelector('.sgx-tb-text').getBoundingClientRect();
-      const back = document.querySelector('.sgx-tb-back').getBoundingClientRect();
-      const nav = document.querySelector('.sgx-tb-nav').getBoundingClientRect();
-      const avatar = document.querySelector('.sgx-tb-avatar');
+      const box = (el) => el.getBoundingClientRect();
+      const pillEl = document.querySelector('.sgx-tb-pill');
+      const pill = box(pillEl);
+      const text = box(document.querySelector('.sgx-tb-text'));
+      const nav = box(document.querySelector('.sgx-tb-nav'));
+      const bar = box(document.querySelector('.sgx-topbar'));
+      const backEl = document.querySelector('[data-sgx-back]');
+      const back = box(backEl);
+      const more = box(document.querySelector('[data-sgx-more]'));
+      const meEl = document.querySelector('.sgx-tb-me');
+      const me = box(meEl);
+      const avatar = meEl.querySelector('img.sgx-tb-avatar');
       return {
         dx: text.left + text.width / 2 - (pill.left + pill.width / 2),
         dy: text.top + text.height / 2 - (pill.top + pill.height / 2),
         pillH: pill.height,
-        back: back.width,
-        nav: nav.width,
-        avatarOpacity: getComputedStyle(avatar).opacity,
+        nav: [nav.width, nav.height],
+        me: [me.width, me.height],
+        order: nav.right <= pill.left && pill.right <= me.left,
+        gaps: [Math.round(pill.left - nav.right), Math.round(me.left - pill.right)],
+        // 两圆贴顶栏两端（右侧距视口 16px 由 .sgx-topbar 的 right 保证；html 有 scrollbar-gutter，不直接量视口）
+        sides: [Math.round(nav.left - bar.left), Math.round(bar.right - me.right)],
+        backInPill: pillEl.contains(backEl) && back.left - pill.left < 12,
+        moreRight: pill.right - more.right < 12,
+        avatarOpacity: avatar ? getComputedStyle(avatar).opacity : null,
+        avatarCount: document.querySelectorAll('.sgx-topbar .sgx-tb-avatar').length,
+        meInteractive: !!meEl.closest('a, button') || !!meEl.querySelector('a, button'),
+        backCircles: document.querySelectorAll('.sgx-topbar > [data-sgx-back]').length,
       };
     });
     expect(Math.abs(r.dx)).toBeLessThanOrEqual(1);
     expect(Math.abs(r.dy)).toBeLessThanOrEqual(1);
     expect(r.pillH).toBe(52);
-    expect(r.back).toBe(52);
-    expect(r.nav).toBe(52);
+    expect(r.nav).toEqual([52, 52]);
+    expect(r.me).toEqual([52, 52]);
+    expect(r.order).toBe(true);
+    expect(r.gaps).toEqual([8, 8]);
+    expect(r.sides).toEqual([0, 0]);
+    expect(r.backInPill).toBe(true);
+    expect(r.moreRight).toBe(true);
     expect(r.avatarOpacity).toBe('1');
+    expect(r.avatarCount, '只有右圆一个头像，长条里不再有小头像').toBe(1);
+    expect(r.meInteractive, '右圆头像只展示，不可点击').toBe(false);
+    expect(r.backCircles, '旧返回圆已删除').toBe(0);
+  });
+
+  test('右圆头像点了不跳转', async ({ page }) => {
+    await page.goto('/post/2026-10-07-muse-playbook/', { waitUntil: 'domcontentloaded' });
+    const before = page.url();
+    await page.locator('.sgx-tb-me').click();
+    await page.waitForTimeout(300);
+    expect(page.url()).toBe(before);
   });
 
   test('大标题与顶栏小标题交接：不同时出现', async ({ page }) => {
@@ -224,6 +256,12 @@ test.describe('顶栏 v2.0', () => {
     expect(items.map((t) => t.trim())).toEqual(['主站', '书库', '博客']);
     await expect(menu.locator('[aria-current="page"]')).toHaveText('博客');
     await expect(menu.locator('a[href="https://book.styrigx.com"]')).toHaveCount(1);
+    // 导航圆在左边：菜单左沿与导航圆左沿对齐
+    const [menuLeft, navLeft] = await page.evaluate(() => [
+      document.querySelector('#sgx-nav-menu').getBoundingClientRect().left,
+      document.querySelector('[data-sgx-apps]').getBoundingClientRect().left,
+    ]);
+    expect(Math.abs(menuLeft - navLeft)).toBeLessThanOrEqual(1);
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
   });
