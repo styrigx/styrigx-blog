@@ -1,6 +1,7 @@
 ---
-// 顶栏 v2.0（与 Book 同款）：返回圆 + 长条（头像 · Styrigx 居中 · ⋮）+ 导航圆（九宫点）。
-// - 头像始终显示；Styrigx 在长条内水平垂直居中。
+// 顶栏 v3（与主站 Space 同款，左右对称）：左圆九宫格导航 + 长条（返回 ‹ · Styrigx 居中 · ⋮）+ 右圆头像。
+// - 右圆头像只展示（以后接账号体系），不可点击、不导航。
+// - Styrigx 在长条内水平垂直居中；返回在长条左侧，⋮ 在长条右侧。
 // - 页面大标题（main h1，首页除外）随滚动淡出；贴到顶栏下沿时完全消失，
 //   同一刻 Styrigx 隐藏、同一位置淡入小标题（= 大标题文字）。
 // - 导航圆菜单：主站 / 书库 / 博客（三站统一顺序，主站第一；来自 site.toml 的 topNav）。
@@ -66,8 +67,8 @@ function isActive(href: string) {
 const shouldShowTocAction = showTocIcon && tocItems.length > 0;
 const langTargetHref = withBase(isEn ? zhHref : enHref);
 const langTarget: PageLang = isEn ? 'zh' : 'en';
-/* 头像由主站统一管理（设置页可换），这里直接读主站 /avatar/，换头像后跟着变 */
-const avatarSrc = 'https://styrigx.com/avatar/96.webp';
+/* 头像由主站统一管理（设置页可换），这里直接读主站 /avatar/，换头像后跟着变；右圆 52px 用 192 档（与主站一致） */
+const avatarSrc = 'https://styrigx.com/avatar/192.webp';
 const t = {
   back: isEn ? 'Back' : '返回',
   home: isEn ? `${site.title} home` : `${site.title} 首页`,
@@ -89,21 +90,39 @@ const t = {
   data-home-href={withBase(homeHref)}
 >
   <div class="sgx-topbar">
-    <button type="button" class="sgx-tb-back" data-sgx-back aria-label={t.back}>
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg
+    <button
+      type="button"
+      class="sgx-tb-nav"
+      data-sgx-apps
+      aria-label={t.apps}
+      aria-haspopup="menu"
+      aria-expanded="false"
+      aria-controls="sgx-nav-menu"
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+        ><circle cx="5" cy="5" r="2"></circle><circle cx="12" cy="5" r="2"></circle><circle
+          cx="19"
+          cy="5"
+          r="2"></circle><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"
+        ></circle><circle cx="19" cy="12" r="2"></circle><circle cx="5" cy="19" r="2"
+        ></circle><circle cx="12" cy="19" r="2"></circle><circle cx="19" cy="19" r="2"
+        ></circle></svg
       >
     </button>
 
     <div class="sgx-tb-pill">
+      <button type="button" class="sgx-tb-pbtn sgx-tb-back" data-sgx-back aria-label={t.back}>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg
+        >
+      </button>
       <a class="sgx-tb-brand" href={withBase(homeHref)} aria-label={t.home}>
-        <img class="sgx-tb-avatar" src={avatarSrc} alt="" width="28" height="28" />
         <span class="sgx-tb-text">{site.title}</span>
       </a>
       <span class="sgx-tb-mini" data-sgx-mini aria-hidden="true"></span>
@@ -125,25 +144,9 @@ const t = {
       </button>
     </div>
 
-    <button
-      type="button"
-      class="sgx-tb-nav"
-      data-sgx-apps
-      aria-label={t.apps}
-      aria-haspopup="menu"
-      aria-expanded="false"
-      aria-controls="sgx-nav-menu"
-    >
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-        ><circle cx="5" cy="5" r="2"></circle><circle cx="12" cy="5" r="2"></circle><circle
-          cx="19"
-          cy="5"
-          r="2"></circle><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"
-        ></circle><circle cx="19" cy="12" r="2"></circle><circle cx="5" cy="19" r="2"
-        ></circle><circle cx="12" cy="19" r="2"></circle><circle cx="19" cy="19" r="2"
-        ></circle></svg
-      >
-    </button>
+    <span class="sgx-tb-me" aria-hidden="true">
+      <img class="sgx-tb-avatar" src={avatarSrc} alt="" width="52" height="52" />
+    </span>
   </div>
 
   <nav class="sgx-menu" id="sgx-nav-menu" aria-label={t.apps} data-sgx-menu="apps" hidden>
@@ -395,7 +398,7 @@ const t = {
 </script>
 
 <style is:global>
-  /* ===== 顶栏 v2.0（与 Book 同款）===== */
+  /* ===== 顶栏 v3（与主站 Space 同款）===== */
   .sgx-topbar {
     position: fixed;
     top: calc(16px + env(safe-area-inset-top, 0px));
@@ -418,7 +421,6 @@ const t = {
     }
   }
 
-  .sgx-tb-back,
   .sgx-tb-pill,
   .sgx-tb-nav {
     background: color-mix(
@@ -433,22 +435,20 @@ const t = {
     pointer-events: auto;
   }
 
-  :root[data-theme='dark'] .sgx-tb-back,
   :root[data-theme='dark'] .sgx-tb-pill,
-  :root[data-theme='dark'] .sgx-tb-nav {
+  :root[data-theme='dark'] .sgx-tb-nav,
+  :root[data-theme='dark'] .sgx-tb-me {
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .sgx-tb-back,
     .sgx-tb-pill,
     .sgx-tb-nav {
       background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface));
     }
   }
 
-  .sgx-tb-back,
   .sgx-tb-nav {
     width: 52px;
     height: 52px;
@@ -461,11 +461,6 @@ const t = {
     color: var(--m-on-surface);
     cursor: pointer;
     transition: background-color 0.15s ease;
-  }
-
-  .sgx-tb-back svg {
-    width: 24px;
-    height: 24px;
   }
 
   .sgx-tb-nav svg {
@@ -488,20 +483,65 @@ const t = {
     display: inline-flex;
     align-items: center;
     height: 40px;
-    padding: 0 8px 0 6px;
+    padding: 0;
     border-radius: 20px;
     flex-shrink: 0;
     color: var(--m-on-surface);
     text-decoration: none;
   }
 
-  .sgx-tb-avatar {
-    width: 28px;
-    height: 28px;
+  /* 长条内左侧返回（原小头像的位置）：40px 透明圆钮，图标 24px */
+  .sgx-tb-pbtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--m-on-surface);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+
+  .sgx-tb-back {
+    left: 6px;
+  }
+
+  .sgx-tb-back svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* 右圆：头像，只展示（以后接账号体系），不可点击 */
+  .sgx-tb-me {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: block;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    pointer-events: auto;
+    cursor: default;
+    user-select: none;
+  }
+
+  .sgx-tb-me .sgx-tb-avatar {
+    width: 100%;
+    height: 100%;
+    border: 0;
     border-radius: 999px;
     object-fit: cover;
-    border: 1px solid var(--m-outline);
-    flex-shrink: 0;
+    display: block;
+    -webkit-user-drag: none;
   }
 
   /* Styrigx：相对长条水平垂直居中 */
@@ -571,19 +611,19 @@ const t = {
     transition: background-color 0.15s ease;
   }
 
-  .sgx-tb-back:active,
+  .sgx-tb-pbtn:active,
   .sgx-tb-nav:active,
   .sgx-tb-more:active {
     background-color: rgba(0, 0, 0, 0.06);
   }
 
-  :root[data-theme='dark'] .sgx-tb-back:active,
+  :root[data-theme='dark'] .sgx-tb-pbtn:active,
   :root[data-theme='dark'] .sgx-tb-nav:active,
   :root[data-theme='dark'] .sgx-tb-more:active {
     background-color: rgba(255, 255, 255, 0.1);
   }
 
-  .sgx-tb-back:focus-visible,
+  .sgx-tb-pbtn:focus-visible,
   .sgx-tb-nav:focus-visible,
   .sgx-tb-more:focus-visible,
   .sgx-tb-brand:focus-visible {
@@ -597,7 +637,7 @@ const t = {
     transform: translateY(calc(var(--hero-fade, 0) * -8px));
   }
 
-  /* ===== 菜单（导航圆 / ⋮ / 目录）：锚在顶栏下方 8px，右对齐 ===== */
+  /* ===== 菜单（导航圆 / ⋮ / 目录）：锚在顶栏下方 8px；⋮ / 目录右对齐，导航圆在左边所以左对齐 ===== */
   .sgx-menu {
     position: fixed;
     top: calc(16px + env(safe-area-inset-top, 0px) + 52px + 8px);
@@ -611,9 +651,20 @@ const t = {
     box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.25);
   }
 
+  .sgx-menu[data-sgx-menu='apps'] {
+    left: 16px;
+    right: auto;
+  }
+
+  /* 桌面：与顶栏同样以 50% 为中线（100vw 含滚动条，会差半个滚动条宽） */
   @media (min-width: 980px) {
     .sgx-menu {
-      right: max(16px, calc((100vw - 1068px) / 2));
+      right: max(16px, calc(50% - 534px));
+    }
+
+    .sgx-menu[data-sgx-menu='apps'] {
+      left: max(16px, calc(50% - 534px));
+      right: auto;
     }
   }
 
@@ -709,7 +760,7 @@ const t = {
   @media (prefers-reduced-motion: reduce) {
     .sgx-tb-text,
     .sgx-tb-mini,
-    .sgx-tb-back,
+    .sgx-tb-pbtn,
     .sgx-tb-nav,
     .sgx-tb-more {
       transition: none;
