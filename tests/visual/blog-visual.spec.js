@@ -3,6 +3,13 @@ import { test, expect } from '@playwright/test';
 // One UI 视觉基线：每个页面 × 浅色/深色 × 手机 390×844 / 桌面 1200px。
 // 基线图提交在 tests/visual/baseline/，CI 用同版本 Chromium 对比。
 
+// 顶栏右圆头像从主站远程加载：截图前等所有图片解码完，避免头像有时在、有时空导致基线抖动
+async function imagesReady(page) {
+  await page
+    .waitForFunction(() => Array.from(document.images).every((i) => i.complete), null, { timeout: 10000 })
+    .catch(() => {});
+}
+
 const PAGES = [
   { name: 'home', path: '/' },
   { name: 'home-en', path: '/en/' },
@@ -34,6 +41,7 @@ for (const { name, path } of PAGES) {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
     });
     expect(overflow, `${name} 有横向溢出`).toBe(false);
+    await imagesReady(page);
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: false });
   });
 }
@@ -74,6 +82,7 @@ test('search dialog baseline screenshot', async ({ page }) => {
       { timeout: 10000 },
     )
     .catch(() => {});
+  await imagesReady(page);
   await expect(page).toHaveScreenshot('search-dialog.png', { fullPage: false });
 });
 
