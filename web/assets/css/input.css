@@ -1,0 +1,12 @@
+/* 博客样式入口：scripts/build-css.mjs 按顺序展开这里的 @import，拼在 Tailwind 4 产物（tw-input.css）后面，输出 web/assets/css/main.css（不进仓库）。
+   博客的样式都是自己写的 class（和原 Astro 版一样没有 Tailwind 重置）；Hugo 负责压缩。
+   顺序 = 原站的加载顺序：共享外壳 → 主题基础排版 → One UI 换皮 → 组件 → 代码块。 */
+@import './sgx-shell.css';
+@import './blog/base.css';
+@import './blog/one-ui.css';
+@import './blog/blog-post-list.css';
+@import './blog/blog-article.css';
+@import './blog/blog-related-posts.css';
+@import './blog/components.css';
+@import './blog/code.css';
+@import './blog/code-tokens.css';

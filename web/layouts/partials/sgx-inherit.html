@@ -1,0 +1,133 @@
+{{- /* 博客跟随主站设置（博客没有自己的语言 / 深浅色开关，设置全在主站 styrigx.com/settings/）。
+外观 + 语言（内联脚本，渲染前同步执行）：读主站写的 sgx-ui cookie（Domain=styrigx.com，base64url JSON），契约见 docs/sgx-ui-cookie.md。
+- mode（或别名 theme）：light | dark | system；没有 cookie → 系统 prefers-color-scheme。<html> 同时设 data-theme 和 class="dark"（共享外壳的角色）。
+- pal：调色板 id（13 个预设之一，否则 lake）→ <html data-palette>（lake 不写）。
+- accent：主站当前主题色种子 #rrggbb。等于 pal 的预设种子 → 只用预设；不等 → 自定义色：
+  用共享外壳的 palette-scheme.js 算整套角色写进 <style id="sgx-accent-roles">，并缓存在本站 localStorage sgx-shell-accent-css
+  （首行「引擎版本|#种子」）。有缓存首帧直接插；没缓存先用预设渲染，entries/inherit.ts 按需 import 引擎算好再插。
+- fs / rm：字体大小 / 减弱动效。
+- lang：zh | en。和当前页语言不同、且本页有对应语言版本（<meta name="sgx-alt-zh|en">）时 location.replace 过去。
+  没有 cookie 的 lang 时沿用旧行为：只有中文首页按旧的 styrigx-blog-lang / 浏览器语言跳 /en/。
+博客原来的主题开关已删除：旧的 navfolio-theme / sgx-theme-at 本地键清掉，避免盖过主站设置。
+脚本原文来自 src/components/SgxInherit.astro（Astro 的 define:vars 换成下面这行 SGX_SHELL）。
+参数：.alt = dict "zh" "/..." "en" "/..."（只在真的有对应版本时给） */ -}}
+{{- $pal := index hugo.Data "sgx-shell" "palettes" -}}
+{{- $seeds := dict -}}
+{{- range $pal.presets }}{{ $seeds = merge $seeds (dict .id .seed) }}{{ end -}}
+{{- $shell := dict "v" $pal.schemeVersion "seeds" $seeds -}}
+{{- with .alt }}{{ with .zh }}<meta name="sgx-alt-zh" content="{{ . }}">{{ end }}{{ with .en }}<meta name="sgx-alt-en" content="{{ . }}">{{ end }}{{ end }}
+<script>
+(function () {
+const SGX_SHELL = {{ $shell | jsonify | safeJS }};
+(() => {
+  const read = () => {
+    const m = document.cookie.match(/(?:^|;\s*)sgx-ui=([^;]*)/);
+    if (!m || !m[1]) return null;
+    try {
+      let b = m[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      const v = JSON.parse(decodeURIComponent(escape(atob(b))));
+      return v && typeof v === 'object' ? v : null;
+    } catch {
+      return null;
+    }
+  };
+  const HEX = /^#[0-9a-f]{6}$/i;
+  const CACHE = 'sgx-shell-accent-css';
+  /* 自定义主题色：有缓存就插 <style id="sgx-accent-roles">；没有就留给模块脚本（data-sgx-seed） */
+  const applySeed = (root, seed) => {
+    let el = document.getElementById('sgx-accent-roles');
+    if (!seed) {
+      if (el) el.remove();
+      delete root.dataset.sgxSeed;
+      return;
+    }
+    root.dataset.sgxSeed = seed;
+    let c = '';
+    try {
+      c = localStorage.getItem(CACHE) || '';
+    } catch {}
+    const head = SGX_SHELL.v + '|' + seed + '\n';
+    if (c.indexOf(head) !== 0) return;
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'sgx-accent-roles';
+      document.head.appendChild(el);
+    }
+    const css = c.slice(head.length);
+    if (el.textContent !== css) el.textContent = css;
+  };
+  const lang = () => {
+    const l = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    return l.startsWith('en') ? 'en' : 'zh';
+  };
+  const isBot = () =>
+    /bot|crawl|spider|slurp|mediapartners|baidu|bingpreview|facebookexternalhit|twitterbot|linkedinbot|embedly|quora|pinterest|slackbot|discordbot|telegrambot|whatsapp|applebot|duckduckbot|yandex|sogou|exabot|semrush|ahrefs/i.test(
+      navigator.userAgent || '',
+    );
+  /* 语言：返回要跳去的地址，不跳返回 '' */
+  const langTarget = (ui) => {
+    let want = ui && (ui.lang === 'zh' || ui.lang === 'en') ? ui.lang : '';
+    const path = location.pathname;
+    if (!want) {
+      /* 旧行为：只在中文首页按本地记忆 / 浏览器语言跳英文 */
+      if (path !== '/') return '';
+      let stored = null;
+      try {
+        stored = localStorage.getItem('styrigx-blog-lang');
+      } catch {}
+      if (stored === 'zh') return '';
+      const nav = (navigator.language || '').toLowerCase();
+      if (stored === 'en' || nav === 'en' || nav.startsWith('en-')) want = 'en';
+      else return '';
+    }
+    if (want === lang()) return '';
+    const meta = document.querySelector('meta[name="sgx-alt-' + want + '"]');
+    const href = meta && meta.getAttribute('content');
+    if (!href || href === path) return '';
+    return href + location.hash;
+  };
+  const apply = () => {
+    try {
+      const ui = read();
+      const root = document.documentElement;
+      try {
+        localStorage.removeItem('navfolio-theme');
+        localStorage.removeItem('sgx-theme-at');
+      } catch {}
+      if (!isBot()) {
+        const go = langTarget(ui);
+        if (go) {
+          location.replace(go);
+          return;
+        }
+      }
+      const mode = ui && (ui.mode || ui.theme);
+      const sys = !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+      const dark = mode === 'dark' || (mode !== 'light' && sys);
+      root.dataset.theme = dark ? 'dark' : 'light';
+      root.style.colorScheme = dark ? 'dark' : 'light';
+      root.classList.toggle('dark', dark);
+      const pal =
+        ui && typeof ui.pal === 'string' && Object.hasOwn(SGX_SHELL.seeds, ui.pal) ? ui.pal : 'lake';
+      if (pal !== 'lake') root.setAttribute('data-palette', pal);
+      else root.removeAttribute('data-palette');
+      const acc = ui && typeof ui.accent === 'string' && HEX.test(ui.accent) ? ui.accent.toLowerCase() : '';
+      applySeed(root, acc && acc !== SGX_SHELL.seeds[pal] ? acc : '');
+      const fs = ui && (ui.fs === 'small' || ui.fs === 'large') ? ui.fs : '';
+      root.style.fontSize = fs === 'large' ? '112.5%' : fs === 'small' ? '87.5%' : '';
+      root.classList.toggle('reduced-motion', !!(ui && ui.rm === 1));
+    } catch {}
+  };
+  apply();
+  if (!window.__sgxInheritInit) {
+    window.__sgxInheritInit = true;
+    document.addEventListener('astro:after-swap', apply);
+    /* 跟系统：系统深浅色变了再应用一次（cookie 指定了 light/dark 时 apply 会保持原样） */
+    try {
+      window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', apply);
+    } catch {}
+  }
+})();
+})();
+</script>

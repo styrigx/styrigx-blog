@@ -1,0 +1,4 @@
+{{- /* 返回顶部（原 ScrollToTopButton.astro） */ -}}
+<span class="scroll-top-marker" data-scroll-top-marker aria-hidden="true"></span>
+<button class="scroll-top-button" type="button" aria-label="{{ i18n "scrollTop" }}" title="{{ i18n "scrollTop" }}" data-scroll-top-button>{{ partial "icon.html" (dict "name" "arrow-up" "size" 18) }}</button>
+{{ partial "script.html" (dict "name" "scroll-top.ts") }}
