@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "astro dev",
     "fonts:ui": "bun scripts/fonts/subset-ui-font.ts",
-    "build": "astro build && pagefind --site dist --output-subdir pagefind --root-selector main --exclude-selectors \"[data-pagefind-ignore]\"",
+    "build": "astro build",
     "preview": "astro preview",
     "docs:sync": "git submodule update --init --recursive",
     "astro": "astro",
@@ -62,7 +62,6 @@
     "@typescript/native": "npm:typescript@^7.0.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.1.1",
-    "pagefind": "^1.5.2",
     "prettier": "^3.9.6",
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^6.0.2"

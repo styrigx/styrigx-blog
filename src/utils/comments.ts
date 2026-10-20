@@ -5,7 +5,7 @@ export type CommentsConfig = SiteConfig['comments'];
 
 const giscusRequiredFields = ['repo', 'repo_id', 'category', 'category_id'] as const;
 const commentProviders = ['giscus', 'utterances', 'waline', 'none'] as const;
-const commentSectionCollections = new Set(['blog', 'about']);
+const commentSectionCollections = new Set(['blog']);
 
 export function supportsCommentSection(collection?: string) {
   return collection ? commentSectionCollections.has(collection) : false;

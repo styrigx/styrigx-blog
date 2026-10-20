@@ -4,6 +4,7 @@ description: "Styrigx UI 鉴权规范 2.0：三层凭证（根凭证/站长凭�
 date: 2026-10-11
 lang: zh
 series: ["Styrigx UI 鉴权规范"]
+seriesOrder: 2
 tags: ["Styrigx UI", "鉴权", "安全", "Passkey", "Cloudflare"]
 ---
 

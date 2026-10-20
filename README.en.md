@@ -22,17 +22,17 @@ Take it apart, then put it back together.
 
 The blog sub-site of Styrigx's Space: notes on AI tools, open-source project retrospectives and self-built infrastructure. The interface is Styrigx UI, designed in-house and shared with the main site: the same floating top bar, nine-dot site switcher, wallpaper and appearance. The content engine is Navfolio.
 
-The blog only does posts. The home page is the post list; everything else lives on the main site.
+The blog only does posts, built as an immersive app: the nine-dot button on the left opens the navigation drawer (Home / Bookmarks / Library / Blog / Settings, same as the main site), the middle is a segmented slider Home · Posts · Topics (tap, swipe or arrow keys), the avatar sits on the right. Language, light/dark and colors are set on the main site and the blog follows.
 
 ## What it does
 
-- The home page is the post list, with tag filters on top and a full tags page.
-- Bilingual: Chinese at `/`, English at `/en/`; first visits follow the browser language.
+- Three tabs on the list page: Home (title, latest 3 posts, newest series), Posts (all posts), Topics (series → categories → tags, filtered in place). The URL hash keeps the tab (`#posts`, `#topics`, `#topics/tag/<slug>`).
+- On a post the top bar is a reading-progress bar with the title; tap it for the table of contents. Posts in a series show a compact "part n of N" block; see [docs/content-series.md](docs/content-series.md).
+- Bilingual: Chinese at `/`, English at `/en/`; language follows the main site setting (without one, first visits follow the browser language).
 - Post URLs are fixed at `/post/<slug>/`, so comments survive a title change.
-- The ⋮ menu holds full-text search (Pagefind), language switch and light/dark.
 - Giscus comments, stored in this repo's Discussions.
 - RSS (`/rss.xml`, `/en/rss.xml`) and a sitemap.
-- Follows the main site's look: theme color, light/dark, font size and reduced motion sync from the main site.
+- Follows the main site: light/dark, palette, accent color, font size, reduced motion and language come from the main site's `sgx-ui` cookie; contract in [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md) (Chinese).
 - Chinese text uses LXGW WenKai, self-hosted and subset per build.
 
 ## Writing a post
@@ -62,7 +62,7 @@ git clone https://github.com/styrigx/styrigx-blog.git
 cd styrigx-blog
 bun install
 bun run dev        # local preview
-bun run build      # build, plus search index and font subsets
+bun run build      # build
 bun run preview    # preview the build
 ```
 

@@ -71,9 +71,7 @@ const wordCountLabel = ui.article.wordCount(wordCount);
       <>
         <div class="archive-heading archive-header-main">
           <p class="archive-kicker">{kicker}</p>
-          <h1 class="archive-title" data-pagefind-meta="title">
-            {title}
-          </h1>
+          <h1 class="archive-title">{title}</h1>
           <div class="meta-line" aria-label={ui.article.metadata}>
             {date && (
               <MetadataItem kind="date" separated={false}>
@@ -103,7 +101,10 @@ const wordCountLabel = ui.article.wordCount(wordCount);
                   <span class="group-label">{ui.groups.categories}</span>
                   <span class="group-list">
                     {categories.map((category) => (
-                      <a class="group-link" href={`${basePath}/blog/categories/${category.slug}/`}>
+                      <a
+                        class="group-link"
+                        href={`${basePath}${lang === 'en' ? '/en/' : '/'}#topics/category/${category.slug}`}
+                      >
                         {category.name}
                       </a>
                     ))}
@@ -116,7 +117,10 @@ const wordCountLabel = ui.article.wordCount(wordCount);
                   <span class="group-label">{ui.groups.series}</span>
                   <span class="group-list">
                     {series.map((item) => (
-                      <a class="group-link" href={`${basePath}/blog/series/${item.slug}/`}>
+                      <a
+                        class="group-link"
+                        href={`${basePath}${lang === 'en' ? '/en/' : '/'}#topics/series/${item.slug}`}
+                      >
                         {item.name}
                         {item.current && item.total ? ` ${item.current}/${item.total}` : ''}
                       </a>
@@ -136,7 +140,7 @@ const wordCountLabel = ui.article.wordCount(wordCount);
       </>
     ) : (
       <>
-        <h1 data-pagefind-meta="title">{title}</h1>
+        <h1>{title}</h1>
 
         <div class="meta-line" aria-label={ui.article.metadata}>
           {date && (
@@ -167,7 +171,10 @@ const wordCountLabel = ui.article.wordCount(wordCount);
                 <span class="group-label">{ui.groups.categories}</span>
                 <span class="group-list">
                   {categories.map((category) => (
-                    <a class="group-link" href={`${basePath}/blog/categories/${category.slug}/`}>
+                    <a
+                      class="group-link"
+                      href={`${basePath}${lang === 'en' ? '/en/' : '/'}#topics/category/${category.slug}`}
+                    >
                       {category.name}
                     </a>
                   ))}
@@ -180,7 +187,10 @@ const wordCountLabel = ui.article.wordCount(wordCount);
                 <span class="group-label">{ui.groups.series}</span>
                 <span class="group-list">
                   {series.map((item) => (
-                    <a class="group-link" href={`${basePath}/blog/series/${item.slug}/`}>
+                    <a
+                      class="group-link"
+                      href={`${basePath}${lang === 'en' ? '/en/' : '/'}#topics/series/${item.slug}`}
+                    >
                       {item.name}
                       {item.current && item.total ? ` ${item.current}/${item.total}` : ''}
                     </a>

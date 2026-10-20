@@ -1,7 +1,0 @@
-site: dist
-output_subdir: pagefind
-root_selector: main
-# Bilingual site: let pagefind detect per-page language from <html lang>
-# instead of forcing everything into one index.
-exclude_selectors:
-  - '[data-pagefind-ignore]'
