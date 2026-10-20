@@ -4,6 +4,7 @@ description: "Styrigx UI Auth Spec 2.0: three credential layers (root/owner/lock
 date: 2026-10-11
 lang: en
 series: ["Styrigx UI Auth Spec"]
+seriesOrder: 2
 tags: ["Styrigx UI", "auth", "security", "Passkey", "Cloudflare"]
 ---
 

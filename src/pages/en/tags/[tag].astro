@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
-import BackLink from '../../../components/blog/BackLink.astro';
 import BlogArchiveHeader from '../../../components/blog/BlogArchiveHeader.astro';
 import BlogPostList from '../../../components/blog/BlogPostList.astro';
 import BlogTopNav from '../../../components/blog/BlogTopNav.astro';
@@ -10,7 +9,7 @@ import { getSiteConfig } from '../../../data/site';
 import { sortBlogPostsForArchive } from '../../../utils/content-dates';
 import { getAllTags } from '../../../utils/content-groups';
 import { getHtmlLangFor, getUiTextFor } from '../../../utils/ui-text';
-import { pageLangOf, tagUrl } from '../../../utils/lang';
+import { pageLangOf } from '../../../utils/lang';
 
 const lang = 'en';
 
@@ -61,10 +60,9 @@ const ui = getUiTextFor(lang);
     </style>
   </head>
   <body>
-    <BlogTopNav lang="en" zhHref="/" enHref={tagUrl('en', tag.slug)} />
-    <main data-pagefind-body class="oui-archive-wrap">
+    <BlogTopNav lang="en" mode="links" activeTab="topics" />
+    <main class="oui-archive-wrap">
       <div class="tag-body">
-        <BackLink href="/en/" label={ui.groups.back} />
         <BlogArchiveHeader
           kicker={ui.groups.tagCloudKicker}
           title={`#${tag.name}`}

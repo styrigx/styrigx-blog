@@ -105,34 +105,101 @@ describe('旧网址回归（换皮不改路由）', () => {
     const res = await fetch(base + '/post/2026-10-07-muse-playbook/');
     const html = await res.text();
     assert.match(html, /oui-article-paper/, '应有 One UI 文章纸面');
-    assert.match(html, /data-pagefind-body/, 'pagefind 索引标记保留');
+    assert.doesNotMatch(html, /pagefind/, '站内搜索已删除');
     assert.match(html, /giscus/i, 'Giscus 评论保留');
   });
 
-  it('首页即文章列表（Book 同款标题区 + 文章列表）', async () => {
+  it('列表页：首页 · 文章 · 专题 三个面板，没有归档', async () => {
     const res = await fetch(base + '/');
     const html = await res.text();
-    assert.match(html, /sgx-subpage-title[^>]*>博客</, '应有居中大标题「博客」');
+    assert.match(html, /sgx-subpage-title[^>]*>博客</, '首页面板有居中大标题「博客」');
     assert.match(html, /note-entry/, '应有文章列表');
+    for (const id of ['home', 'posts', 'topics']) {
+      assert.match(html, new RegExp(`id="sgx-pane-${id}"`), `面板 ${id}`);
+      assert.match(html, new RegExp(`data-sgx-tab="${id}"`), `页签 ${id}`);
+    }
+    assert.doesNotMatch(html, /sgx-pane-archive|data-sgx-tab="archive"/, '没有归档页签');
     assert.doesNotMatch(html, /oui-hero/, '旧首页 hero 已删除');
+    assert.doesNotMatch(
+      html,
+      /\s(data-sgx-more|data-sgx-back|data-lang-switcher|data-theme-toggle)[\s>=]/,
+      '⋮ / ‹ / 语言 / 主题开关已删除',
+    );
   });
 
-  it('旧归档地址跳回列表', async () => {
+  it('专题：鉴权规范系列（中文 2 篇，按 seriesOrder）', async () => {
+    const html = await (await fetch(base + '/')).text();
+    const card = html.match(/data-series-card="[^"]+"[\s\S]*?<\/article>/);
+    assert.ok(card, '应有系列卡');
+    assert.match(card[0], /Styrigx UI 鉴权规范/);
+    const titles = [...card[0].matchAll(/<a href="\/post\/([^"]+)\/"/g)].map((m) => m[1]);
+    assert.deepEqual(titles, [
+      '2026-10-11-key-spec-whitepaper',
+      '2026-10-11-key-spec-whitepaper-v2',
+    ]);
+  });
+
+  it('系列文章页有系列小块（第 n / N 篇）', async () => {
+    const html = await (await fetch(base + '/post/2026-10-11-key-spec-whitepaper-v2/')).text();
+    assert.match(html, /sgx-series-block/);
+    assert.match(html, /第 2 \/ 2 篇/);
+    assert.match(
+      html,
+      /rel="prev"[^>]*href="\/post\/2026-10-11-key-spec-whitepaper\/"|href="\/post\/2026-10-11-key-spec-whitepaper\/"[^>]*>\s*<small/,
+    );
+  });
+
+  it('旧归档 / 关于地址跳回列表', async () => {
     for (const [from, to] of [
       ['/archives/', '/'],
       ['/en/archives/', '/en/'],
+      ['/about/', '/'],
+      ['/en/about/', '/en/'],
     ]) {
       const html = await (await fetch(base + from)).text();
       assert.match(html, new RegExp(`url=${to.replace(/\//g, '\\/')}"`), `${from} 应跳到 ${to}`);
     }
   });
 
-  it('导航顺序：主站 / 书库 / 博客', async () => {
+  it('导航抽屉：主页 / 书签 / 书库 / 博客（与主站同一套，没有设置）', async () => {
     const html = await (await fetch(base + '/')).text();
-    const hrefs = [
-      ...html.matchAll(/class="sgx-menu-item"[^>]*href="([^"]+)"[^>]*data-sgx-nav-link/g),
-    ].map((m) => m[1]);
-    assert.deepEqual(hrefs, ['https://styrigx.com', 'https://book.styrigx.com', '/']);
+    const hrefs = [...html.matchAll(/class="sgx-drawer-item"[^>]*href="([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    assert.deepEqual(hrefs, [
+      'https://styrigx.com/',
+      'https://styrigx.com/bookmarks/',
+      'https://book.styrigx.com/',
+      '/',
+    ]);
+    assert.doesNotMatch(html, /settings\//, '博客抽屉不放设置入口');
+    const en = await (await fetch(base + '/en/')).text();
+    const enHrefs = [...en.matchAll(/class="sgx-drawer-item"[^>]*href="([^"]+)"/g)].map(
+      (m) => m[1],
+    );
+    assert.deepEqual(enHrefs, [
+      'https://styrigx.com/en/',
+      'https://styrigx.com/en/bookmarks/',
+      'https://book.styrigx.com/en/',
+      '/en/',
+    ]);
+  });
+
+  it('文章页：长条只有 首页 · 文章 · 专题（文章高亮），没有标题；正文里没有内联目录；目录在抽屉底部', async () => {
+    const html = await (await fetch(base + '/post/2026-10-07-muse-playbook/')).text();
+    const pill = html.match(/<div class="sgx-tb-pill[\s\S]*?<\/div>/)[0];
+    const labels = [...pill.matchAll(/class="sgx-seg-btn"[^>]*>([^<]+)</g)].map((m) => m[1].trim());
+    assert.deepEqual(labels, ['首页', '文章', '专题']);
+    assert.match(pill, /aria-current="page"[^>]*>\s*文章/);
+    assert.match(pill, /href="\/#posts"/);
+    assert.match(pill, /data-sgx-progress/);
+    assert.doesNotMatch(html, /sgx-prog-title|sgx-toc-sheet|mobile-article-toc/);
+    const drawer = html.match(/<dialog id="sgx-drawer"[\s\S]*?<\/dialog>/)[0];
+    assert.match(drawer, /class="sgx-drawer-toc"/);
+    assert.match(drawer, /目录/);
+    assert.match(drawer, /data-toc-link/);
+    const home = await (await fetch(base + '/')).text();
+    assert.doesNotMatch(home, /sgx-drawer-toc/, '列表页抽屉没有目录');
   });
 
   it('404.html 存在且为 One UI 样式', async () => {

@@ -42,9 +42,7 @@ const customSite = process.env.SITE_URL;
 const customBase = process.env.SITE_BASE;
 
 const resolvedSite =
-  normalizeSiteUrl(customSite) ||
-  normalizeSiteUrl(configuredSiteUrl) ||
-  'https://blog.styrigx.com';
+  normalizeSiteUrl(customSite) || normalizeSiteUrl(configuredSiteUrl) || 'https://blog.styrigx.com';
 
 const resolvedBase = customBase || '/';
 
@@ -56,9 +54,12 @@ export default defineConfig({
   // by pathname, so the slash must match the old Hugo URLs exactly.
   trailingSlash: 'always',
   // 2026-10 简化：原首页删除，/ 即文章列表；旧归档地址跳回列表
+  // 2026-10-20 沉浸式 app：「关于」页删除（个人信息在主站），旧地址跳回列表
   redirects: {
     '/archives': '/',
     '/en/archives': '/en/',
+    '/about': '/',
+    '/en/about': '/en/',
   },
   markdown: {
     remarkPlugins: astroPluginConfig.remarkPlugins,
