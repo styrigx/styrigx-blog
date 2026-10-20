@@ -16,7 +16,7 @@ jobs:
       - name: Refuse main
         if: inputs.branch == 'main'
         run: echo "不要在 main 上更新基线" && exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.branch }}
       - uses: oven-sh/setup-bun@v2
