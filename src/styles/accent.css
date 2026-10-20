@@ -1,0 +1,123 @@
+/* 由 scripts/gen-accent-css.mjs 生成，勿手改。强调色：滑块指示器 / 阅读进度 / 抽屉当前项 / 选中筛选。
+   默认跟调色板（--m-primary）；sgx-ui cookie 的 accent 可单独覆盖（色板 id → data-accent，#rrggbb → 内联变量）。 */
+:root {
+  --sgx-accent: var(--m-primary);
+  --sgx-on-accent: var(--m-on-primary);
+}
+:root[data-accent='lake'] {
+  --sgx-accent: #2f5f86;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='lake'],
+:root.dark[data-accent='lake'] {
+  --sgx-accent: #9ccbf3;
+  --sgx-on-accent: #003351;
+}
+:root[data-accent='forest'] {
+  --sgx-accent: #2f6b4f;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='forest'],
+:root.dark[data-accent='forest'] {
+  --sgx-accent: #98d8b4;
+  --sgx-on-accent: #073525;
+}
+:root[data-accent='terra'] {
+  --sgx-accent: #8a4b2d;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='terra'],
+:root.dark[data-accent='terra'] {
+  --sgx-accent: #f4b795;
+  --sgx-on-accent: #4d230e;
+}
+:root[data-accent='violet'] {
+  --sgx-accent: #6750a4;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='violet'],
+:root.dark[data-accent='violet'] {
+  --sgx-accent: #d0bcff;
+  --sgx-on-accent: #371e73;
+}
+:root[data-accent='rose'] {
+  --sgx-accent: #984061;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='rose'],
+:root.dark[data-accent='rose'] {
+  --sgx-accent: #ffb1c8;
+  --sgx-on-accent: #5e1133;
+}
+:root[data-accent='cherry'] {
+  --sgx-accent: #ba1a20;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='cherry'],
+:root.dark[data-accent='cherry'] {
+  --sgx-accent: #ffb3ac;
+  --sgx-on-accent: #680008;
+}
+:root[data-accent='tangerine'] {
+  --sgx-accent: #b02e00;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='tangerine'],
+:root.dark[data-accent='tangerine'] {
+  --sgx-accent: #ffb5a0;
+  --sgx-on-accent: #5f1500;
+}
+:root[data-accent='amber'] {
+  --sgx-accent: #825500;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='amber'],
+:root.dark[data-accent='amber'] {
+  --sgx-accent: #ffb952;
+  --sgx-on-accent: #452b00;
+}
+:root[data-accent='matcha'] {
+  --sgx-accent: #3c6a00;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='matcha'],
+:root.dark[data-accent='matcha'] {
+  --sgx-accent: #9dd761;
+  --sgx-on-accent: #1d3700;
+}
+:root[data-accent='teal'] {
+  --sgx-accent: #00696b;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='teal'],
+:root.dark[data-accent='teal'] {
+  --sgx-accent: #4cdadd;
+  --sgx-on-accent: #003738;
+}
+:root[data-accent='indigo'] {
+  --sgx-accent: #3d4fd3;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='indigo'],
+:root.dark[data-accent='indigo'] {
+  --sgx-accent: #bcc2ff;
+  --sgx-on-accent: #00189a;
+}
+:root[data-accent='orchid'] {
+  --sgx-accent: #a62092;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='orchid'],
+:root.dark[data-accent='orchid'] {
+  --sgx-accent: #fface7;
+  --sgx-on-accent: #5e0052;
+}
+:root[data-accent='graphite'] {
+  --sgx-accent: #5e5e5e;
+  --sgx-on-accent: #ffffff;
+}
+:root[data-theme='dark'][data-accent='graphite'],
+:root.dark[data-accent='graphite'] {
+  --sgx-accent: #c6c6c6;
+  --sgx-on-accent: #303030;
+}

@@ -116,7 +116,6 @@ export function getRouteLabels(): Record<string, string> {
   const routeLabels: Record<string, string> = {
     '/blog': 'blog',
     '/archive': 'archive',
-    '/about': 'about',
   };
 
   for (const module of getResolvedPageModules(navfolioConfig)) {

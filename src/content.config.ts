@@ -47,6 +47,8 @@ const articleSchema = ({ image }: Parameters<CollectionSchemaFactory>[0]) =>
     tags: z.array(z.string()).optional().default([]),
     categories: z.array(z.string()).optional().default([]),
     series: z.array(z.string()).optional().default([]),
+    // 系列内的篇序（1 起）。同一系列按 seriesOrder 升序，没写的排在后面再按日期；见 docs/content-series.md
+    seriesOrder: z.number().int().positive().optional(),
     comments: z.boolean().optional().default(true),
     sidebar: sidebarSchema,
   });
@@ -490,11 +492,6 @@ const blog = defineCollection({
   schema: blogArticleSchema,
 });
 
-const about = defineCollection({
-  loader: glob({ base: contentBase, pattern: '**/about.{md,mdx}' }),
-  schema: articleSchema,
-});
-
 const projects = defineCollection({
   loader: glob({ base: `${contentBase}/projects`, pattern: '**/*.{md,mdx}' }),
   schema: (context) =>
@@ -587,7 +584,6 @@ const media = defineCollection({
 });
 
 export const collections = {
-  about,
   blog,
   siteConfig,
   ...(projectsModuleEnabled ? { projects } : {}),

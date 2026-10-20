@@ -64,6 +64,13 @@ function sortByName(a: ContentGroup, b: ContentGroup) {
 }
 
 function sortBySeriesDateAsc(a: BlogPost, b: BlogPost) {
+  const orderA = a.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+  const orderB = b.data.seriesOrder ?? Number.POSITIVE_INFINITY;
+
+  if (orderA !== orderB) {
+    return orderA < orderB ? -1 : 1;
+  }
+
   const dateDelta = a.data.date.valueOf() - b.data.date.valueOf();
 
   if (dateDelta !== 0) {

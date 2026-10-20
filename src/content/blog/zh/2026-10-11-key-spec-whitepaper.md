@@ -4,6 +4,7 @@ description: "一个主站签发、多个子站验证的个人站点群，怎样
 date: 2026-10-11
 lang: zh
 series: ["Styrigx UI 鉴权规范"]
+seriesOrder: 1
 tags: ["规范", "安全", "Cloudflare", "Ed25519"]
 superseded: true
 ---

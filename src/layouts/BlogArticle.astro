@@ -127,7 +127,10 @@ const shouldRenderSidebar = sidebarConfig.enable ?? true;
 const shouldRenderToc = sidebarConfig.toc ?? true;
 const hasToc = shouldRenderToc && tocItemCount > 0;
 
-const allBlogPosts = await getCollection('blog', ({ data }) => !data.draft && pageLangOf(data) === lang);
+const allBlogPosts = await getCollection(
+  'blog',
+  ({ data }) => !data.draft && pageLangOf(data) === lang,
+);
 const currentBlogPost = isBlogPost ? (post as CollectionEntry<'blog'>) : undefined;
 const seriesContext = isBlogPost
   ? getSeriesContext(currentBlogPost!, allBlogPosts, rawSeries[0])
@@ -147,115 +150,204 @@ const hasRelatedPosts =
   shouldRenderSidebar && (sidebarConfig.relatedPosts ?? true) && relatedPosts.length > 0;
 const hasSidebar = shouldRenderSidebar && hasToc;
 const currentPathname = Astro.url.pathname;
-const zhHref = lang === 'zh' ? currentPathname : (props.translationHref ?? '/');
-const enHref = lang === 'en' ? currentPathname : (props.translationHref ?? '/en/');
+/* 只有真的有另一语言版本才给 alt：主站 cookie 的 lang 不同时跳过去 */
+const altHrefs = props.translationHref
+  ? lang === 'zh'
+    ? { zh: currentPathname, en: props.translationHref }
+    : { zh: props.translationHref, en: currentPathname }
+  : undefined;
+const listHref = lang === 'en' ? '/en/' : '/';
 const shareUrl = new URL(currentPathname, siteConfig.site.url).toString();
 ---
 
 <!doctype html>
 <html lang={ui.locale} data-palette={palette}>
   <head>
-    <BaseHead title={title} description={description} />
+    <BaseHead title={title} description={description} alt={altHrefs} />
     {
       comments.provider === 'waline' && comments.enabled && (
         <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css" />
       )
     }
+    <style>
+      .sgx-series-block {
+        margin: 18px 0 16px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: var(--m-container-low);
+        border: 1px solid var(--m-outline);
+        font-family: var(--font-ui, inherit);
+      }
+      .sgx-series-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .sgx-series-name {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--m-on-surface);
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+      .sgx-series-pos {
+        flex-shrink: 0;
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: var(--sgx-accent);
+        color: var(--sgx-on-accent);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .sgx-series-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .sgx-series-nav a {
+        display: block;
+        min-width: 0;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: var(--m-container-lowest);
+        color: var(--m-on-surface);
+        text-decoration: none;
+      }
+      .sgx-series-nav a.next {
+        text-align: right;
+      }
+      .sgx-series-nav small {
+        display: block;
+        color: var(--m-on-surface-variant);
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .sgx-series-nav span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 600;
+      }
+    </style>
   </head>
   <body class:list={['blog-detail-page', { 'blog-content-ui': contentFont === 'ui' }]}>
-    <BlogTopNav showTocIcon={hasToc} tocItems={tocItems} lang={lang} zhHref={zhHref} enHref={enHref} />
+    <BlogTopNav mode="article" tocItems={hasToc ? tocItems : []} lang={lang} />
     <div class="blog-background" aria-hidden="true"></div>
 
     <div class="oui-article-wrap">
-    <div class="oui-article-layout">
-    <main class:list={['blog-layout', 'oui-article-main', { 'blog-layout-centered': !hasSidebar }]} data-pagefind-body>
-      <div class="article-column">
-        <article class="article-card oui-article-paper">
-          <ArticleHeader
-            title={title}
-            description={description}
-            date={date}
-            wordCount={wordCount}
-            readingTime={readingTime}
-            tags={tagLinks}
-            categories={categoryLinks}
-            series={seriesLinks}
-            heroImage={heroImage}
-            showHeroImage={showHeroImage}
-            variant={props.headerVariant}
-            kicker={props.headerKicker}
-            note={props.headerNote}
-            pathname={Astro.url.pathname}
-            showPageView={isBlogPost}
-            lang={lang}
-          />
+      <div class="oui-article-layout">
+        <main
+          class:list={['blog-layout', 'oui-article-main', { 'blog-layout-centered': !hasSidebar }]}
+        >
+          <div class="article-column">
+            <article class="article-card oui-article-paper">
+              <ArticleHeader
+                title={title}
+                description={description}
+                date={date}
+                wordCount={wordCount}
+                readingTime={readingTime}
+                tags={tagLinks}
+                categories={categoryLinks}
+                series={seriesContext ? [] : seriesLinks}
+                heroImage={heroImage}
+                showHeroImage={showHeroImage}
+                variant={props.headerVariant}
+                kicker={props.headerKicker}
+                note={props.headerNote}
+                pathname={Astro.url.pathname}
+                showPageView={isBlogPost}
+                lang={lang}
+              />
 
-          {
-            hasToc && (
-              <section class="mobile-article-toc" aria-label={ui.toc.title}>
-                <TableOfContents items={tocItems} compact collapsible font={contentFont} lang={lang} />
-              </section>
-            )
-          }
+              {
+                seriesContext && (
+                  <aside
+                    class="sgx-series-block"
+                    aria-label={ui.article.moreInSeries(seriesContext.name)}
+                  >
+                    <div class="sgx-series-top">
+                      <a
+                        class="sgx-series-name"
+                        href={`${basePath}${listHref}#topics/series/${seriesContext.slug}`}
+                      >
+                        {seriesContext.name}
+                      </a>
+                      <span class="sgx-series-pos">
+                        {lang === 'en'
+                          ? `Part ${seriesContext.current} of ${seriesContext.total}`
+                          : `第 ${seriesContext.current} / ${seriesContext.total} 篇`}
+                      </span>
+                    </div>
+                    {(seriesContext.prev || seriesContext.next) && (
+                      <div class="sgx-series-nav">
+                        {seriesContext.prev ? (
+                          <a
+                            class="prev"
+                            rel="prev"
+                            href={`${basePath}${postUrl(pageLangOf(seriesContext.prev.data), postSlugFromId(seriesContext.prev.id))}`}
+                          >
+                            <small>{lang === 'en' ? '‹ Previous' : '‹ 上一篇'}</small>
+                            <span>{seriesContext.prev.data.title}</span>
+                          </a>
+                        ) : (
+                          <span />
+                        )}
+                        {seriesContext.next ? (
+                          <a
+                            class="next"
+                            rel="next"
+                            href={`${basePath}${postUrl(pageLangOf(seriesContext.next.data), postSlugFromId(seriesContext.next.id))}`}
+                          >
+                            <small>{lang === 'en' ? 'Next ›' : '下一篇 ›'}</small>
+                            <span>{seriesContext.next.data.title}</span>
+                          </a>
+                        ) : (
+                          <span />
+                        )}
+                      </div>
+                    )}
+                  </aside>
+                )
+              }
 
-          <section
-            id="article-start"
-            class:list={['article-content', { 'article-content-ui': contentFont === 'ui' }]}
-          >
-            <slot />
-          </section>
-
-          {
-            seriesContext && (seriesContext.prev || seriesContext.next) && (
-              <nav
-                class="series-neighbor-nav"
-                aria-label={ui.article.moreInSeries(seriesContext.name)}
+              <section
+                id="article-start"
+                class:list={['article-content', { 'article-content-ui': contentFont === 'ui' }]}
               >
-                {seriesContext.prev ? (
-                  <a
-                    href={`${basePath}${postUrl(pageLangOf(seriesContext.prev.data), postSlugFromId(seriesContext.prev.id))}`}
-                  >
-                    <small>{ui.article.previousInSeries(seriesContext.name)}</small>
-                    <span>{seriesContext.prev.data.title}</span>
-                  </a>
-                ) : (
-                  <span />
-                )}
-                {seriesContext.next ? (
-                  <a
-                    href={`${basePath}${postUrl(pageLangOf(seriesContext.next.data), postSlugFromId(seriesContext.next.id))}`}
-                    class="next"
-                  >
-                    <small>{ui.article.nextInSeries(seriesContext.name)}</small>
-                    <span>{seriesContext.next.data.title}</span>
-                  </a>
-                ) : (
-                  <span />
-                )}
-              </nav>
-            )
-          }
-        </article>
-        {isBlogPost && <ShareButtons title={title} url={shareUrl} lang={lang} />}
-        {hasRelatedPosts && <RelatedPosts posts={relatedPosts} class="article-after-related" lang={lang} />}
+                <slot />
+              </section>
+            </article>
+            {isBlogPost && <ShareButtons title={title} url={shareUrl} lang={lang} />}
+            {
+              hasRelatedPosts && (
+                <RelatedPosts posts={relatedPosts} class="article-after-related" lang={lang} />
+              )
+            }
+            {
+              shouldMountCommentSection && (
+                <CommentSection frontmatter={post.data} pathname={Astro.url.pathname} lang={lang} />
+              )
+            }
+          </div>
+        </main>
         {
-          shouldMountCommentSection && (
-            <CommentSection frontmatter={post.data} pathname={Astro.url.pathname} lang={lang} />
+          hasSidebar && (
+            <aside class="right-sidebar oui-toc-card" aria-label={ui.article.readingTools}>
+              <div class="right-sidebar-inner">
+                {hasToc && <TableOfContents items={tocItems} font={contentFont} lang={lang} />}
+              </div>
+            </aside>
           )
         }
       </div>
-
-    </main>
-      {
-        hasSidebar && (
-          <aside class="right-sidebar oui-toc-card" aria-label={ui.article.readingTools}>
-            <div class="right-sidebar-inner">
-              {hasToc && <TableOfContents items={tocItems} font={contentFont} lang={lang} />}
-            </div>
-          </aside>
-        )
-      }
-    </div>
     </div>
     <Footer lang={lang} />
     <ScrollToTopButton />
