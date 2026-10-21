@@ -1,27 +1,24 @@
-// 博客跟随主站设置（sgx-ui cookie：外观 / 强调色 / 语言，契约 docs/sgx-ui-cookie.md）+ 数字健康区域键。
+// 博客跟随主站设置（sgx-ui cookie：外观 / 调色板 / 自定义主题色种子 / 语言，契约 docs/sgx-ui-cookie.md）+ 数字健康区域键。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const astro = readFileSync(new URL('../src/components/SgxInherit.astro', import.meta.url), 'utf8');
-const inline = astro.match(/<script is:inline>([\s\S]*?)<\/script>/)[1];
-const css = readFileSync(new URL('../src/styles/palettes.css', import.meta.url), 'utf8');
-
-const PALETTES = [
-  'forest',
-  'terra',
-  'violet',
-  'rose',
-  'cherry',
-  'tangerine',
-  'amber',
-  'matcha',
-  'teal',
-  'indigo',
-  'orchid',
-  'graphite',
-];
+/* 首帧前的内联脚本：web/layouts/partials/sgx-inherit.html（模板里那行 const SGX_SHELL = … 由下面的 ctx 提供） */
+const partial = readFileSync(new URL('../web/layouts/partials/sgx-inherit.html', import.meta.url), 'utf8');
+const inline = partial
+  .match(/<script>\n\(function \(\) \{\n([\s\S]*?)\n\}\)\(\);\n<\/script>/)[1]
+  .replace(/^const SGX_SHELL = .*$/m, '');
+/* 模块那一半（数字健康、自定义色引擎按需加载）：web/assets/js/entries/inherit.ts */
+const astro = readFileSync(new URL('../web/assets/js/entries/inherit.ts', import.meta.url), 'utf8');
+const palettes = JSON.parse(
+  readFileSync(new URL('../web/data/sgx-shell/palettes.json', import.meta.url), 'utf8'),
+);
+/* 和 sgx-inherit.html 一样从共享外壳的 palettes.json 算 */
+const SGX_SHELL = {
+  v: palettes.schemeVersion,
+  seeds: Object.fromEntries(palettes.presets.map((p) => [p.id, p.seed])),
+};
 
 function enc(obj) {
   return Buffer.from(JSON.stringify(obj))
@@ -56,6 +53,13 @@ function run({
     removeAttribute: (k) => delete attrs[k],
     classList: { toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) },
   };
+  const els = {};
+  const head = {
+    appendChild: (el) => {
+      el.remove = () => delete els[el.id];
+      els[el.id] = el;
+    },
+  };
   const listeners = {};
   const replaced = [];
   const ctx = {
@@ -63,6 +67,9 @@ function run({
       cookie,
       documentElement: root,
       addEventListener: (t, f) => (listeners[t] = f),
+      head,
+      getElementById: (id) => els[id] || null,
+      createElement: () => ({ id: '', textContent: '' }),
       querySelector: (sel) => {
         const m = sel.match(/sgx-alt-(zh|en)/);
         return m && alt[m[1]] ? { getAttribute: () => alt[m[1]] } : null;
@@ -77,19 +84,23 @@ function run({
     navigator: { userAgent: ua, language: navLang },
     atob: (s) => Buffer.from(s, 'base64').toString('binary'),
     escape,
+    SGX_SHELL,
     window: { matchMedia: () => ({ matches: dark, addEventListener() {} }) },
   };
   ctx.window.document = ctx.document;
   vm.runInNewContext(inline, ctx);
-  return { root, attrs, classes, listeners, local, props, replaced };
+  return { root, attrs, classes, listeners, local, props, replaced, els };
 }
 
 test('无 cookie：跟系统深浅色，默认调色板', () => {
   const r = run();
   assert.equal(r.root.dataset.theme, 'light');
-  assert.equal(run({ dark: true }).root.dataset.theme, 'dark');
+  assert.ok(!r.classes.has('dark'));
+  const d = run({ dark: true });
+  assert.equal(d.root.dataset.theme, 'dark');
+  assert.ok(d.classes.has('dark'), '共享外壳的角色认 <html class="dark">');
   assert.equal(r.attrs['data-palette'], undefined);
-  assert.equal(r.attrs['data-accent'], undefined);
+  assert.equal(r.root.dataset.sgxSeed, undefined);
   assert.equal(r.root.style.fontSize, '');
 });
 
@@ -129,19 +140,35 @@ test('博客已没有深浅色开关：旧的 navfolio-theme / sgx-theme-at 清�
   assert.equal(r.local['sgx-theme-at'], undefined);
 });
 
-test('accent：色板 id → data-accent；#rrggbb → 内联变量 + 可读文字色；非法值忽略', () => {
-  assert.equal(run({ cookie: 'sgx-ui=' + enc({ accent: 'rose' }) }).attrs['data-accent'], 'rose');
-  const hex = run({ cookie: 'sgx-ui=' + enc({ accent: '#ffd54f' }) });
-  assert.equal(hex.attrs['data-accent'], undefined);
-  assert.equal(hex.props['--sgx-accent'], '#ffd54f');
-  assert.equal(hex.props['--sgx-on-accent'], '#161b20');
-  assert.equal(
-    run({ cookie: 'sgx-ui=' + enc({ accent: '#123456' }) }).props['--sgx-on-accent'],
-    '#ffffff',
-  );
-  const bad = run({ cookie: 'sgx-ui=' + enc({ accent: 'red;x' }) });
-  assert.equal(bad.attrs['data-accent'], undefined);
-  assert.equal(bad.props['--sgx-accent'], undefined);
+test('accent = 该预设的种子 → 只用预设；不同 → 自定义种子（有缓存首帧插角色，没缓存留给模块脚本）', () => {
+  const preset = run({ cookie: 'sgx-ui=' + enc({ pal: 'rose', accent: SGX_SHELL.seeds.rose }) });
+  assert.equal(preset.attrs['data-palette'], 'rose');
+  assert.equal(preset.root.dataset.sgxSeed, undefined);
+  assert.equal(preset.els['sgx-accent-roles'], undefined);
+
+  const noCache = run({ cookie: 'sgx-ui=' + enc({ pal: 'lake', accent: '#FFD54F' }) });
+  assert.equal(noCache.root.dataset.sgxSeed, '#ffd54f');
+  assert.equal(noCache.els['sgx-accent-roles'], undefined, '没缓存：首帧先用预设');
+
+  const css = 'html:root{--sgx-primary:#123}';
+  const cached = run({
+    cookie: 'sgx-ui=' + enc({ pal: 'lake', accent: '#ffd54f' }),
+    local: { 'sgx-shell-accent-css': SGX_SHELL.v + '|#ffd54f\n' + css },
+  });
+  assert.equal(cached.els['sgx-accent-roles'].textContent, css);
+
+  const stale = run({
+    cookie: 'sgx-ui=' + enc({ pal: 'lake', accent: '#ffd54f' }),
+    local: { 'sgx-shell-accent-css': 'old|#ffd54f\n' + css },
+  });
+  assert.equal(stale.els['sgx-accent-roles'], undefined, '引擎版本变了：缓存作废');
+
+  /* 旧 cookie：accent 是色板 id / 非法值 → 忽略，只看 pal */
+  for (const accent of ['rose', 'red;x', '#12345']) {
+    const r = run({ cookie: 'sgx-ui=' + enc({ pal: 'teal', accent }) });
+    assert.equal(r.attrs['data-palette'], 'teal');
+    assert.equal(r.root.dataset.sgxSeed, undefined, accent);
+  }
 });
 
 test('lang：和页面不同且有对应版本 → 跳过去（带 hash）', () => {
@@ -187,22 +214,26 @@ test('lang：没 cookie 时只在中文首页按旧记忆 / 浏览器语言跳',
   );
 });
 
-test('坏 cookie / 非法调色板不抛错', () => {
+test('坏 cookie / 非法或未知调色板不抛错，回到 lake', () => {
   assert.equal(run({ cookie: 'sgx-ui=%%%' }).attrs['data-palette'], undefined);
   assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: '"><x' }) }).attrs['data-palette'], undefined);
+  assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'nosuch' }) }).attrs['data-palette'], undefined);
 });
 
-test('换页后重新应用（astro:after-swap）', () => {
+test('脚本原样保留了换页后重新应用的钩子（astro:after-swap，Hugo 整页跳转用不到但无害）', () => {
   const r = run({ cookie: 'sgx-ui=' + enc({ pal: 'teal' }) });
   assert.equal(typeof r.listeners['astro:after-swap'], 'function');
 });
 
-test('palettes.css 含主站 12 个调色板的浅色/深色两套', () => {
-  for (const p of PALETTES) {
-    assert.ok(css.includes(`:root[data-palette='${p}'] {`), p + ' light');
-    assert.ok(css.includes(`:root[data-theme='dark'][data-palette='${p}']`), p + ' dark');
+test('共享外壳副本含 13 套预设（亮 / 暗）和抽屉样式', () => {
+  const shell = readFileSync(new URL('../web/assets/css/sgx-shell.css', import.meta.url), 'utf8');
+  assert.equal(palettes.presets.length, 13);
+  for (const { id } of palettes.presets) {
+    if (id === 'lake') continue;
+    assert.ok(shell.includes(`:root[data-palette="${id}"] {`), id + ' light');
+    assert.ok(shell.includes(`:root.dark[data-palette="${id}"] {`), id + ' dark');
   }
-  assert.equal((css.match(/\[data-palette='/g) || []).length, PALETTES.length * 3);
+  assert.match(shell, /\.sgx-drawer-item\[aria-current="page"\]/);
 });
 
 test('数字健康：文章页 post:<slug>，其他页 blog，上报主站', () => {

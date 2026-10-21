@@ -1,5 +1,5 @@
 name: Update visual snapshots
-# 视觉基线只在 CI 环境生成（与 deploy.yml 同版本 Chromium + Noto CJK），本地生成的字体渲染不一样。
+# 视觉基线只在 CI 环境生成（与 deploy.yml 同版本 Node / Hugo / Chromium + Noto CJK），本地生成的字体渲染不一样。
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +9,8 @@ on:
 permissions:
   contents: write
   actions: write # 推完基线后用 GITHUB_TOKEN 触发 deploy.yml
+env:
+  HUGO_VERSION: 0.168.0
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -19,31 +21,31 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.branch }}
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: 1.4.3
-      - name: Install font subsetting tools
-        run: python -m pip install --user fonttools brotli
-      - run: bun install --frozen-lockfile
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: false
+      - run: npm ci
       - name: Build site
-        run: bun run build
-        env:
-          SITE_URL: https://blog.styrigx.com
+        run: npm run build
       - name: Install Playwright browsers and CJK fonts
         run: |
           npx playwright install chromium --with-deps
           sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
       - name: Update snapshots
-        run: npx playwright test --config=playwright.config.js --update-snapshots
+        run: npx playwright test --config=playwright.config.js tests/e2e/blog-visual.spec.js --update-snapshots
       - name: Commit snapshots only
         id: commit
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add tests/visual/blog-visual.spec.js-snapshots
+          git add tests/e2e/blog-visual.spec.js-snapshots
           git diff --cached --quiet && echo "基线无变化" && exit 0
           git diff --cached --stat
-          # 只提交截图：跳过 pre-commit（lint-staged 会对全仓跑 format:check，与截图无关）
           git commit --no-verify -m "[UI] CI 更新视觉基线"
           # checkout@v4 传 ref 是 detached HEAD，没有本地分支和 upstream，裸 git push 会失败；用显式 refspec
           git push origin "HEAD:${{ inputs.branch }}"

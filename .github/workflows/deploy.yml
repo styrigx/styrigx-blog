@@ -9,7 +9,11 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  HUGO_VERSION: 0.168.0
+
 jobs:
+  # 作业名保持 build-and-deploy 不变（分支保护的必需检查按这个名字认）
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
@@ -18,46 +22,53 @@ jobs:
 
       - name: Assert zero-key Pages
         # 博客的会话检查全在主站鉴权网关（styrigx-auth-gateway）。本仓库不许有 Pages Functions、
-        # 不许出现任何密钥变量名或会话 cookie 验签代码；public/_worker.js 只做 pages.dev 跳回。
+        # 不许出现任何密钥变量名或会话 cookie 验签代码；web/static/_worker.js 只做 pages.dev 跳回。
         run: |
-          if [ -e functions ]; then echo "FAIL: functions/ must not exist (auth lives in the gateway)"; exit 1; fi
-          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-verified" public/ src/ --include="*.js" --include="*.mjs" --include="*.ts"; then
+          if [ -e functions ] || [ -e web/static/functions ]; then echo "FAIL: functions/ must not exist (auth lives in the gateway)"; exit 1; fi
+          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-verified" web/static web/assets web/layouts --include="*.js" --include="*.mjs" --include="*.ts" --include="*.html"; then
             echo "FAIL: blog must not hold keys or verify sessions"; exit 1
           fi
           echo "OK: zero-key Pages."
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          bun-version: 1.4.3
+          node-version-file: .nvmrc
+          cache: npm
 
-      - name: Install font subsetting tools
-        run: python -m pip install --user fonttools brotli
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ env.HUGO_VERSION }}
+          extended: false
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Build site
-        run: bun run build
-        env:
-          SITE_URL: https://blog.styrigx.com
+        # Tailwind CLI 构建 CSS（scripts/build-css.mjs）→ hugo --minify -s web → web/public/
+        run: npm run build
 
-      - name: Run middleware tests
-        run: bun run test
+      - name: Shared shell copy matches lock / main site
+        # 共享外壳（主站 styrigx-space web/shared/shell）是唯一来源：副本不许手改，版本要和主站 main 一致
+        run: node scripts/sync-shell.mjs --check
 
-      - name: Check design tokens sync with main site
-        # 博客的 --m-* / --glass-* 必须与主站 @layer tokens 逐项一致，主站是唯一来源
-        run: node scripts/check-design-tokens.mjs
+      - name: Code token colours are up to date
+        run: node scripts/gen-code-tokens.mjs --check
+
+      - name: Unit tests
+        # 网址映射 / 订阅 / 锚点 / 网关路由 / 构建 CSS 毛玻璃 / 代码配色对比度 / sgx-ui cookie 继承
+        run: npm test
 
       - name: Install Playwright browsers and CJK fonts
         run: |
           npx playwright install chromium --with-deps
           sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
 
-      - name: Visual regression tests
-        run: npx playwright test --config=playwright.config.js
+      - name: Playwright (behaviour + visual regression)
+        run: npm run test:e2e
 
-      - name: Upload visual test artifacts on failure
+      - name: Upload test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v6
         with:
@@ -67,7 +78,7 @@ jobs:
             playwright-report/
 
       - name: Gate check - gateway must already guard blog pages
-        # 本站 Pages 没有验票代码了，必须先确认网关已经挂在 blog.styrigx.com 上，否则部署后页面不设防。
+        # 本站 Pages 没有验票代码，必须先确认网关已经挂在 blog.styrigx.com 上，否则部署后页面不设防。
         # 未登录访问首页必须是网关回的 302（带 X-SGX-Runtime: worker）。不满足就不部署。
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -84,11 +95,11 @@ jobs:
         with:
           apiToken: ${{ secrets.STYRIGX_BLOG_PAGES_DEPLOY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=styrigx-blog --commit-dirty=true
+          command: pages deploy web/public --project-name=styrigx-blog --commit-dirty=true
 
       - name: Smoke test - every page directory is behind the gateway
-        # 只发不带 cookie 的只读请求。dist/ 里每个页面所在的一级目录各抽一个页面，未登录必须是网关回的 302；
-        # 新增页面目录忘了在网关 wrangler.toml 登记 → 这里红。静态资源不能过网关；pages.dev 不能直接打开。
+        # 只发不带 cookie 的只读请求。web/public/ 里每个页面所在的一级目录各抽一个页面，未登录必须是网关回的 302；
+        # 新增页面目录忘了在网关 wrangler.toml 登记 → 这里红。静态资源（css/ js/ fonts/）不能过网关；pages.dev 不能直接打开。
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -u
@@ -104,10 +115,10 @@ jobs:
             done
             echo "::error::$1 expected $2 runtime=$3"; return 1
           }
-          paths=$(cd dist && find . -name '*.html' ! -name '404.html' | sed 's|^\.||; s|index\.html$||' | awk -F/ '{k=($2==""?"/":$2); if(!(k in s)){s[k]=1; print}}')
+          paths=$(cd web/public && find . -name '*.html' ! -name '404.html' | sed 's|^\.||; s|index\.html$||' | awk -F/ '{k=($2==""?"/":$2); if(!(k in s)){s[k]=1; print}}')
           for p in $paths /rss.xml /sitemap-index.xml; do probe "https://blog.styrigx.com$p" 302 worker || ok=1; done
-          asset=$(cd dist && find _astro -name '*.css' | head -1)
-          [ -n "$asset" ] && { probe "https://blog.styrigx.com/$asset" 200 none || ok=1; }
+          asset=$(cd web/public && find css -name '*.css' | head -1)
+          if [ -n "$asset" ]; then probe "https://blog.styrigx.com/$asset" 200 none || ok=1; else echo "::error::no css/*.css in web/public"; ok=1; fi
           hdr=$(curl -sS -o /dev/null -D - -w 'HTTP_CODE:%{http_code}\n' https://styrigx-blog.pages.dev/ | tr -d '\r' || true)
           code=$(printf '%s' "$hdr" | sed -n 's/^HTTP_CODE://p')
           loc=$(printf '%s' "$hdr" | awk -F': ' 'tolower($1)=="location"{print $2}')

@@ -1,10 +1,10 @@
 /**
- * public/_worker.js：pages.dev 等非正式域名一律 301 回 blog.styrigx.com，正式域名原样交给静态文件。
+ * web/static/_worker.js：pages.dev 等非正式域名一律 301 回 blog.styrigx.com，正式域名原样交给静态文件。
  * 运行：node --test tests/worker-redirect.test.mjs
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../public/_worker.js';
+import worker from '../web/static/_worker.js';
 
 const env = {
   ASSETS: { fetch: async (req) => new Response('static:' + new URL(req.url).pathname) },
@@ -28,6 +28,6 @@ test('正式域名交给静态文件', async () => {
 test('本站不再持有任何钥匙或验票代码', async () => {
   const { readFileSync, existsSync } = await import('node:fs');
   assert.equal(existsSync(new URL('../functions', import.meta.url)), false, 'functions/ 不应存在');
-  const src = readFileSync(new URL('../public/_worker.js', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../web/static/_worker.js', import.meta.url), 'utf8');
   assert.doesNotMatch(src, /SGX_|sgx-verified|crypto\.subtle/);
 });

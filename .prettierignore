@@ -1,10 +1,14 @@
-dist
-.astro
 node_modules
-bun.lock
-homepage.png
-public/favicon.ico
+package-lock.json
+web/public
+web/resources
+web/assets/css/main.css
+# 共享外壳供应商副本（scripts/sync-shell.mjs 写入，和主站逐字一致）
+web/assets/css/sgx-shell.css
+web/assets/js/sgx/shell
+web/data/sgx-shell
+# Hugo 模板（Go template，prettier 不认）
+web/layouts
 
 # Preserve author-chosen frontmatter quote style in content files.
-src/content/**/*.md
-src/content/**/*.mdx
+web/content/**/*.md

@@ -2,7 +2,7 @@
  * URL 与 RSS 回归测试（One UI 换皮）。
  * 证明：只换皮不改路由——所有旧网址仍返回 200，RSS 输出结构不变。
  *
- * 跑法：先 `bun run build`（或 npx astro build）生成 dist/，
+ * 跑法：先 `npm run build`（Tailwind + hugo --minify -s web）生成 web/public/，
  * 再 `node --test tests/urls-regression.test.mjs`。
  */
 import { describe, it, before, after } from 'node:test';
@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import { existsSync } from 'node:fs';
 
-const DIST = new URL('../dist/', import.meta.url).pathname.replace(/\/$/, '');
+const DIST = new URL('../web/public/', import.meta.url).pathname.replace(/\/$/, '');
 const MIME = {
   '.html': 'text/html',
   '.xml': 'application/rss+xml',
@@ -69,7 +69,7 @@ describe('旧网址回归（换皮不改路由）', () => {
   let base;
 
   before(async () => {
-    assert.ok(existsSync(DIST), 'dist/ 不存在：请先跑构建');
+    assert.ok(existsSync(DIST), 'web/public/ 不存在：请先跑构建');
     server = serve();
     await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
     base = `http://127.0.0.1:${server.address().port}`;
@@ -112,7 +112,8 @@ describe('旧网址回归（换皮不改路由）', () => {
   it('列表页：首页 · 文章 · 专题 三个面板，没有归档', async () => {
     const res = await fetch(base + '/');
     const html = await res.text();
-    assert.match(html, /sgx-subpage-title[^>]*>博客</, '首页面板有居中大标题「博客」');
+    assert.match(html, /<h1 class="sgx-visually-hidden"[^>]*>博客</, '首页 h1「博客」只给读屏 / 搜索引擎');
+    assert.doesNotMatch(html, /sgx-subpage-head|sgx-subpage-title/, '没有居中大标题区');
     assert.match(html, /note-entry/, '应有文章列表');
     for (const id of ['home', 'posts', 'topics']) {
       assert.match(html, new RegExp(`id="sgx-pane-${id}"`), `面板 ${id}`);
@@ -161,7 +162,7 @@ describe('旧网址回归（换皮不改路由）', () => {
     }
   });
 
-  it('导航抽屉：主页 / 书签 / 书库 / 博客（与主站同一套，没有设置）', async () => {
+  it('导航抽屉：首页 / 书签 / 日刻 / 博客 + 设置（主站共享外壳 nav.json，同主站）', async () => {
     const html = await (await fetch(base + '/')).text();
     const hrefs = [...html.matchAll(/class="sgx-drawer-item"[^>]*href="([^"]+)"/g)].map(
       (m) => m[1],
@@ -169,10 +170,11 @@ describe('旧网址回归（换皮不改路由）', () => {
     assert.deepEqual(hrefs, [
       'https://styrigx.com/',
       'https://styrigx.com/bookmarks/',
-      'https://book.styrigx.com/',
+      'https://daymark.styrigx.com/',
       '/',
+      'https://styrigx.com/settings/',
     ]);
-    assert.doesNotMatch(html, /settings\//, '博客抽屉不放设置入口');
+    assert.doesNotMatch(html, /book\.styrigx\.com/, '书库已下线');
     const en = await (await fetch(base + '/en/')).text();
     const enHrefs = [...en.matchAll(/class="sgx-drawer-item"[^>]*href="([^"]+)"/g)].map(
       (m) => m[1],
@@ -180,8 +182,9 @@ describe('旧网址回归（换皮不改路由）', () => {
     assert.deepEqual(enHrefs, [
       'https://styrigx.com/en/',
       'https://styrigx.com/en/bookmarks/',
-      'https://book.styrigx.com/en/',
+      'https://daymark.styrigx.com/en/',
       '/en/',
+      'https://styrigx.com/en/settings/',
     ]);
   });
 
