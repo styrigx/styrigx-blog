@@ -1,12 +1,12 @@
 {{- /* 顶栏「沉浸式 app」：左圆九宫格 · 中间长条 · 右圆头像（原 src/components/blog/BlogTopNav.astro）。
-- 九宫格：Gmail 式左侧导航抽屉，和主站 styrigx-space 同一份（首页 / 书签 / 日刻 / 博客，分隔线下 设置）；博客是当前项。
+- 九宫格：Gmail 式左侧导航抽屉，和主站 styrigx-space 同一份（首页 / 奇趣 / 日刻 / 博客；头部字标 + 头像，底栏搜索框）；博客是当前项。
   项、图标、样式（宽度、毛玻璃、tonal 当前项、字体）都来自主站共享外壳：data/sgx-shell/nav.json + assets/css/sgx-shell.css
   （scripts/sync-shell.mjs 同步，勿手改）。
 - 长条（.mode）：
   tabs    列表页：分段滑块 首页 · 文章 · 专题，强调色指示器滑到当前页签；面板切换见 assets/js/blog/app-tabs.ts。
   links   标签页 / 404 等子页：同样的分段滑块，但每项是回列表页对应页签的链接（.activeTab 不给就不高亮）。
   article 文章页：同 links，「文章」高亮；长条底边一条强调色细线是阅读进度。
-- 抽屉：设置 下面，文章页（≥2 个标题）再加「目录」（.toc：partials/toc-items.html 的结果）。
+- 抽屉：导航项分隔线下面，文章页（≥2 个标题）再加「目录」（.toc：partials/toc-items.html 的结果）。
 - 右圆头像只展示（以后接账号体系），不可点击、不导航。
 参数：.page .mode .activeTab .toc */ -}}
 {{- $lang := .page.Language.Lang -}}
@@ -47,27 +47,37 @@
 
   <dialog id="sgx-drawer" class="sgx-drawer" aria-label="{{ cond $isEn $nav.label.en $nav.label.zh }}" data-sgx-sheet="drawer">
     <nav class="sgx-drawer-sheet" data-sgx-sheet-panel>
-      <p class="sgx-drawer-head">{{ $nav.brand }}</p>
+      {{- /* 抽屉头 = 字标（nav.json wordmark）+ 右边的头像圆（共享外壳 .sgx-drawer-me）：点了去主站账号页（英文页去 /en/settings/account/） */}}
+      {{- $me := $nav.me.href }}{{ if $isEn }}{{ $me = replace $me "https://styrigx.com/" "https://styrigx.com/en/" }}{{ end }}
+      <div class="sgx-drawer-head"><span class="sgx-drawer-brand">{{ $nav.wordmark | safeHTML }}</span><a class="sgx-drawer-me" href="{{ $me }}" aria-label="{{ cond $isEn $nav.me.en $nav.me.zh }}"><img src="{{ $nav.me.avatar }}" alt="" width="52" height="52"></a></div>
+      <div class="sgx-drawer-body">
       <ul class="sgx-drawer-list">
         {{- range $nav.items }}
         {{- $path := cond $isEn (print "/en" .path) .path }}
         <li><a class="sgx-drawer-item" href="{{ if eq .id "blog" }}{{ $path }}{{ else }}{{ .origin }}{{ $path }}{{ end }}" data-nav="{{ .id }}"{{ if eq .id "blog" }} aria-current="page"{{ end }}><span class="sgx-drawer-ic">{{ index $nav.icons .icon | safeHTML }}</span><span class="sgx-drawer-label">{{ cond $isEn .en .zh }}</span></a></li>
         {{- end }}
       </ul>
+      {{- /* 导航项下的分隔线（同主站 .sgx-drawer-sep，CSS 在 blog/components.css） */}}
+      <hr class="sgx-drawer-sep" aria-hidden="true">
+      {{- with $nav.footer }}
       <hr class="sgx-drawer-div">
       <ul class="sgx-drawer-list">
-        {{- range $nav.footer }}
+        {{- range . }}
         {{- $path := cond $isEn (print "/en" .path) .path }}
         <li><a class="sgx-drawer-item" href="{{ .origin }}{{ $path }}" data-nav="{{ .id }}"><span class="sgx-drawer-ic">{{ index $nav.icons .icon | safeHTML }}</span><span class="sgx-drawer-label">{{ cond $isEn .en .zh }}</span></a></li>
         {{- end }}
       </ul>
+      {{- end }}
       {{- if $hasToc }}
       <section class="sgx-drawer-toc" aria-labelledby="sgx-drawer-toc-title" data-toc-root>
-        <hr class="sgx-drawer-div">
         <p id="sgx-drawer-toc-title" class="sgx-drawer-sub">{{ i18n "toc" }}</p>
         {{ partial "toc-tree.html" (dict "items" $toc "prefix" "drawer-toc" "navLink" true) }}
       </section>
       {{- end }}
+      </div>
+      {{- /* 底栏搜索框（同主站）：博客还没接原地搜索层，点了去主站搜索（/search/ → 主站首页打开搜索层） */}}
+      {{- $sp := $nav.search.path }}{{ if $isEn }}{{ $sp = print "/en" $sp }}{{ end }}
+      <div class="sgx-drawer-foot"><a class="sgx-drawer-search" href="{{ $nav.search.origin }}{{ $sp }}" aria-label="{{ cond $isEn $nav.search.en $nav.search.zh }}"><span class="sgx-drawer-search-ic">{{ index $nav.icons $nav.search.icon | safeHTML }}</span><span class="sgx-drawer-search-label" aria-hidden="true">{{ cond $isEn $nav.search.en $nav.search.zh }}</span></a></div>
     </nav>
   </dialog>
 </header>

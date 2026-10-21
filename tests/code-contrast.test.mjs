@@ -21,7 +21,7 @@ test('code-tokens.css 是最新生成的（改了角色 / 分组请跑 node scri
 });
 
 test(`覆盖 ${presets.length} 套预设 × 亮 / 暗 + 自定义种子`, () => {
-  assert.equal(presets.length, 13);
+  assert.equal(presets.length, 33);
   assert.ok(palettes.filter((p) => p.custom).length >= 80);
 });
 

@@ -58,8 +58,8 @@ function initTopbar() {
           }
           return;
         }
-        /* 抽屉项：当前项（博客）只关闭；其他项先收起再跳转 */
-        const a = t.closest?.<HTMLAnchorElement>('a.sgx-drawer-item');
+        /* 抽屉项：当前项（博客）只关闭；其他项、头部头像（主站账号页）、底栏搜索框（主站搜索）先收起再跳转 */
+        const a = t.closest?.<HTMLAnchorElement>('a.sgx-drawer-item, a.sgx-drawer-me, a.sgx-drawer-search');
         if (!a) return;
         e.preventDefault();
         e.stopPropagation();

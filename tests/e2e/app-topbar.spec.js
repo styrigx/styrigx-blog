@@ -2,7 +2,7 @@
 // - 顶栏三块：九宫格 · 长条 · 头像；没有 ‹ 返回、没有 ⋮。
 // - 列表页长条 = 分段滑块 首页 · 文章 · 专题（没有归档）：点、滑、键盘切换，hash 记住页签。
 // - 指示器 / 阅读进度用主色（--sgx-accent = --sgx-primary，跟 sgx-ui cookie 的 pal / 自定义种子 accent）；抽屉当前项 / 目录当前节是 tonal。
-// - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：首页 / 书签 / 日刻 / 博客 + 设置，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
+// - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：首页 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
 // - 每个页面长条都只有 首页 · 文章 · 专题；文章页「文章」高亮，长条底边一条强调色细线是阅读进度。
 import { test, expect } from '@playwright/test';
 
@@ -286,7 +286,7 @@ test.describe('导航抽屉', () => {
     await expect(drawer(page)).toHaveAttribute('data-state', 'open');
   }
 
-  test('首页 / 书签 / 日刻 / 博客 + 设置（同主站）；博客是 tonal 当前项；毛玻璃面板，宽度同主站', async ({
+  test('首页 / 奇趣 / 日刻 / 博客（同主站）；博客是 tonal 当前项；毛玻璃面板，宽度同主站', async ({
     page,
   }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -294,27 +294,30 @@ test.describe('导航抽屉', () => {
     await openDrawer(page);
     await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveAttribute('aria-expanded', 'true');
     const lists = drawer(page).locator('.sgx-drawer-list');
-    await expect(lists).toHaveCount(2);
+    await expect(lists).toHaveCount(1);
     await expect(lists.nth(0).locator('.sgx-drawer-label')).toHaveText([
       '首页',
-      '书签',
+      '奇趣',
       '日刻',
       '博客',
     ]);
-    await expect(lists.nth(1).locator('.sgx-drawer-label')).toHaveText(['设置']);
-    await expect(drawer(page).locator('hr.sgx-drawer-div')).toHaveCount(1);
-    await expect(drawer(page).locator('[data-nav="settings"]')).toHaveAttribute(
-      'href',
-      'https://styrigx.com/settings/',
-    );
+    await expect(drawer(page).locator('hr.sgx-drawer-sep')).toHaveCount(1);
     await expect(drawer(page).locator('[data-nav="daymark"]')).toHaveAttribute(
       'href',
       'https://daymark.styrigx.com/',
     );
+    await expect(drawer(page).locator('.sgx-drawer-me')).toHaveAttribute(
+      'href',
+      'https://styrigx.com/settings/account/',
+    );
+    await expect(drawer(page).locator('.sgx-drawer-search')).toHaveAttribute(
+      'href',
+      'https://styrigx.com/search/',
+    );
     await expect(drawer(page).locator('[data-nav="book"]')).toHaveCount(0);
     const items = drawer(page).locator('.sgx-drawer-item');
-    await expect(items).toHaveCount(5);
-    for (let i = 0; i < 5; i++) {
+    await expect(items).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
       await expect(items.nth(i).locator('.sgx-drawer-ic svg')).toHaveCount(1);
     }
     await expect(drawer(page).locator('[aria-current="page"] .sgx-drawer-label')).toHaveText(
@@ -383,19 +386,22 @@ test.describe('导航抽屉', () => {
     await openDrawer(page);
   });
 
-  test('英文：Home / Bookmarks / Daymark / Blog / Settings', async ({ page }) => {
+  test('英文：Home / Curio / Daymark / Blog；头像去主站英文账号页', async ({ page }) => {
     await page.goto('/en/', { waitUntil: 'domcontentloaded' });
     await openDrawer(page);
     await expect(drawer(page).locator('.sgx-drawer-label')).toHaveText([
       'Home',
-      'Bookmarks',
+      'Curio',
       'Daymark',
       'Blog',
-      'Settings',
     ]);
-    await expect(drawer(page).locator('[data-nav="settings"]')).toHaveAttribute(
+    await expect(drawer(page).locator('.sgx-drawer-me')).toHaveAttribute(
       'href',
-      'https://styrigx.com/en/settings/',
+      'https://styrigx.com/en/settings/account/',
+    );
+    await expect(drawer(page).locator('.sgx-drawer-search')).toHaveAttribute(
+      'href',
+      'https://styrigx.com/en/search/',
     );
     await expect(drawer(page).locator('[data-nav="blog"]')).toHaveAttribute('href', '/en/');
   });
@@ -455,7 +461,7 @@ test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
     expect(fill).toBe(accent);
   });
 
-  test('抽屉最下面是目录（h2 + 缩进 h3，在 设置 下面）；点目录项收起抽屉并滚到标题，当前节 tonal', async ({
+  test('抽屉导航项下面是目录（h2 + 缩进 h3）；点目录项收起抽屉并滚到标题，当前节 tonal', async ({
     page,
   }) => {
     await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
@@ -464,7 +470,7 @@ test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
     await expect(drawer).toHaveAttribute('data-state', 'open');
     const toc = drawer.locator('.sgx-drawer-toc');
     await expect(toc.locator('.sgx-drawer-sub')).toHaveText('目录');
-    await expect(drawer.locator('[data-nav="settings"]')).toHaveCount(1);
+    await expect(drawer.locator('[data-nav="settings"]')).toHaveCount(0);
     const links = toc.locator('a[data-toc-link]');
     expect(await links.count()).toBeGreaterThan(2);
     const nested = toc.locator('.toc-tree-nested a[data-toc-link]');
