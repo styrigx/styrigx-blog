@@ -9,7 +9,7 @@
 - lang：zh | en。和当前页语言不同、且本页有对应语言版本（<meta name="sgx-alt-zh|en">）时 location.replace 过去。
   没有 cookie 的 lang 时沿用旧行为：只有中文首页按旧的 styrigx-blog-lang / 浏览器语言跳 /en/。
 博客原来的主题开关已删除：旧的 navfolio-theme / sgx-theme-at 本地键清掉，避免盖过主站设置。
-脚本原文来自 src/components/SgxInherit.astro（Astro 的 define:vars 换成下面这行 SGX_SHELL）。
+共享外壳的色板数据由下面这行 SGX_SHELL 传进脚本。
 参数：.alt = dict "zh" "/..." "en" "/..."（只在真的有对应版本时给） */ -}}
 {{- $pal := index hugo.Data "sgx-shell" "palettes" -}}
 {{- $seeds := dict -}}
@@ -122,7 +122,6 @@ const SGX_SHELL = {{ $shell | jsonify | safeJS }};
   apply();
   if (!window.__sgxInheritInit) {
     window.__sgxInheritInit = true;
-    document.addEventListener('astro:after-swap', apply);
     /* 跟系统：系统深浅色变了再应用一次（cookie 指定了 light/dark 时 apply 会保持原样） */
     try {
       window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', apply);

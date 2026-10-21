@@ -35,7 +35,7 @@ test('首帧应用调色板/深色/字号，换页后保持', async ({ page, con
   const fs = await page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
   expect(fs).toBe('18px');
   const primary = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--m-primary').trim(),
+    getComputedStyle(document.documentElement).getPropertyValue('--sgx-primary').trim(),
   );
   expect(primary).not.toBe('');
 
@@ -53,12 +53,12 @@ test('没有 cookie 时保持原行为', async ({ page }) => {
 test('切换调色板会改变主色', async ({ page, context, baseURL }) => {
   await page.goto('/');
   const base = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--m-primary').trim(),
+    getComputedStyle(document.documentElement).getPropertyValue('--sgx-primary').trim(),
   );
   await setUi(context, baseURL, { v: 2, mode: 'light', pal: 'cherry', mat: Date.now() });
   await page.reload();
   const cherry = await page.evaluate(() =>
-    getComputedStyle(document.documentElement).getPropertyValue('--m-primary').trim(),
+    getComputedStyle(document.documentElement).getPropertyValue('--sgx-primary').trim(),
   );
   expect(cherry).not.toBe(base);
 });

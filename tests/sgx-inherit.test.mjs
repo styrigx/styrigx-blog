@@ -10,7 +10,7 @@ const inline = partial
   .match(/<script>\n\(function \(\) \{\n([\s\S]*?)\n\}\)\(\);\n<\/script>/)[1]
   .replace(/^const SGX_SHELL = .*$/m, '');
 /* 模块那一半（数字健康、自定义色引擎按需加载）：web/assets/js/entries/inherit.ts */
-const astro = readFileSync(new URL('../web/assets/js/entries/inherit.ts', import.meta.url), 'utf8');
+const inheritModule = readFileSync(new URL('../web/assets/js/entries/inherit.ts', import.meta.url), 'utf8');
 const palettes = JSON.parse(
   readFileSync(new URL('../web/data/sgx-shell/palettes.json', import.meta.url), 'utf8'),
 );
@@ -220,11 +220,6 @@ test('坏 cookie / 非法或未知调色板不抛错，回到 lake', () => {
   assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'nosuch' }) }).attrs['data-palette'], undefined);
 });
 
-test('脚本原样保留了换页后重新应用的钩子（astro:after-swap，Hugo 整页跳转用不到但无害）', () => {
-  const r = run({ cookie: 'sgx-ui=' + enc({ pal: 'teal' }) });
-  assert.equal(typeof r.listeners['astro:after-swap'], 'function');
-});
-
 test('共享外壳副本含 13 套预设（亮 / 暗）和抽屉样式', () => {
   const shell = readFileSync(new URL('../web/assets/css/sgx-shell.css', import.meta.url), 'utf8');
   assert.equal(palettes.presets.length, 13);
@@ -237,8 +232,8 @@ test('共享外壳副本含 13 套预设（亮 / 暗）和抽屉样式', () => {
 });
 
 test('数字健康：文章页 post:<slug>，其他页 blog，上报主站', () => {
-  assert.match(astro, /key: 'post:' \+ m\[1\]/);
-  assert.match(astro, /key: 'blog'/);
-  assert.match(astro, /https:\/\/styrigx\.com\/api\/wellbeing/);
-  assert.match(astro, /idleMs: 180000/);
+  assert.match(inheritModule, /key: 'post:' \+ m\[1\]/);
+  assert.match(inheritModule, /key: 'blog'/);
+  assert.match(inheritModule, /https:\/\/styrigx\.com\/api\/wellbeing/);
+  assert.match(inheritModule, /idleMs: 180000/);
 });

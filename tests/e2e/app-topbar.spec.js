@@ -281,7 +281,7 @@ test.describe('列表页页签', () => {
 test.describe('导航抽屉', () => {
   const drawer = (page) => page.locator('#sgx-drawer');
   async function openDrawer(page) {
-    await page.locator('.sgx-tb-nav').click();
+    await page.locator('.sgx-topbar > .sgx-tb-nav').click();
     await expect(drawer(page)).toBeVisible();
     await expect(drawer(page)).toHaveAttribute('data-state', 'open');
   }
@@ -290,9 +290,9 @@ test.describe('导航抽屉', () => {
     page,
   }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.sgx-tb-nav')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveAttribute('aria-expanded', 'false');
     await openDrawer(page);
-    await expect(page.locator('.sgx-tb-nav')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveAttribute('aria-expanded', 'true');
     const lists = drawer(page).locator('.sgx-drawer-list');
     await expect(lists).toHaveCount(2);
     await expect(lists.nth(0).locator('.sgx-drawer-label')).toHaveText([
@@ -367,13 +367,13 @@ test.describe('导航抽屉', () => {
     await drawer(page).locator('.sgx-drawer-item', { hasText: '博客' }).click();
     await expect(drawer(page)).toBeHidden();
     await expect(page).toHaveURL(new RegExp(`${ARTICLE}$`));
-    await expect(page.locator('.sgx-tb-nav')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('刚点开就 Esc：照样关上，之后还能再开', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
-      document.querySelector('.sgx-tb-nav').click();
+      document.querySelector('.sgx-topbar > .sgx-tb-nav').click();
       document
         .getElementById('sgx-drawer')
         .dispatchEvent(new Event('cancel', { cancelable: true }));
@@ -460,7 +460,7 @@ test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
   }) => {
     await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
     const drawer = page.locator('#sgx-drawer');
-    await page.locator('.sgx-tb-nav').click();
+    await page.locator('.sgx-topbar > .sgx-tb-nav').click();
     await expect(drawer).toHaveAttribute('data-state', 'open');
     const toc = drawer.locator('.sgx-drawer-toc');
     await expect(toc.locator('.sgx-drawer-sub')).toHaveText('目录');
@@ -480,7 +480,7 @@ test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
     await expect
       .poll(() => page.evaluate((i) => document.getElementById(i).getBoundingClientRect().top, id))
       .toBeLessThan(200);
-    await page.locator('.sgx-tb-nav').click();
+    await page.locator('.sgx-topbar > .sgx-tb-nav').click();
     await expect(drawer).toHaveAttribute('data-state', 'open');
     await expect(toc.locator('a[aria-current="true"]')).toHaveCount(1);
     const cur = await page.evaluate(() => {

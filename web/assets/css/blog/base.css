@@ -1,114 +1,44 @@
-/* 基础排版：来自 @navfolio/theme-default src/styles/global.css（MIT，Copyright (c) 2026 Navfolio；
-   其中 Bear Blog 部分 MIT，https://github.com/HermanMartinus/bearblog）。
-   颜色的 --paper-* 在 one-ui.css 里全部改成主站色彩角色；这里只改了字体变量。 */
-
-
-/*
-  The CSS in this style tag is based off of Bear Blog's default CSS.
-  https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
-  License MIT: https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md
- */
+/* 基础排版：最早取自 @navfolio/theme-default 的 global.css（MIT，Copyright (c) 2026 Navfolio；
+   其中 Bear Blog 部分 MIT，https://github.com/HermanMartinus/bearblog/blob/master/LICENSE.md）。
+   颜色只用共享外壳的色彩角色（--sgx-*，sgx-shell.css）。 */
 
 :root {
-  --black: 35, 39, 35;
-  --gray: 112, 119, 111;
-  --gray-light: 226, 231, 224;
-  --gray-dark: 48, 53, 49;
-  --paper-bg: #fdfdf9;
-  --paper-bg-deep: #f3f5ef;
-  --paper-surface: #fffffc;
-  --paper-surface-muted: #f7f8f3;
-  --paper-surface-rgb: 255, 255, 252;
-  --paper-line: rgba(31, 35, 40, 0.075);
-  --paper-line-strong: rgba(31, 35, 40, 0.12);
-  --paper-ink: #272d28;
-  --paper-ink-soft: #667066;
-  --paper-ink-faint: #90998f;
-  --paper-control: rgba(246, 248, 245, 0.76);
-  --paper-control-hover: rgba(238, 243, 237, 0.92);
-  --paper-nav: rgba(255, 255, 252, 0.92);
-  --paper-card-wash-top: rgba(255, 255, 252, 0.78);
-  --paper-card-wash-bottom: rgba(247, 248, 243, 0.52);
-  --paper-page-bg: #fdfdf9;
-  --paper-detail-bg: #fdfdf9;
-  --paper-texture-light: rgba(255, 255, 255, 0.18);
-  --paper-theme-color: #fdfdf9;
-  --paper-shadow: 0 1px 2px rgba(31, 35, 40, 0.03), 0 4px 12px rgba(31, 35, 40, 0.02);
-  --paper-shadow-lift: 0 1px 2px rgba(31, 35, 40, 0.04), 0 6px 14px rgba(31, 35, 40, 0.025);
   --layout-shell-width: 1168px;
-  --layout-reading-width: 760px;
   --layout-page-gutter: 32px;
   --layout-page-top: 126px;
   --layout-page-bottom: 72px;
   --page-header-spacing: 54px;
   --page-header-spacing-mobile: 28px;
-  /* 字体（2026-10 迁 Hugo）：界面和正文都用主站的 Inter（拉丁）+ 系统中文字体；Maple Mono 只给代码。
-     原来正文 / 界面是 Maple Mono + 霞鹜文楷，代码是 Monaco。 */
+  /* 字体：界面和正文都用主站的 Inter（拉丁）+ 系统中文字体；Maple Mono 只给代码。 */
   --font-ui: Inter, 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-  --font-cjk-system: var(--font-ui);
-  --font-ui-cjk: var(--font-ui);
-  --font-serif-cn: var(--font-ui);
-  --font-mono: var(--font-ui);
-  --font-body: var(--font-ui);
-  --font-display: var(--font-ui);
-  --font-note: var(--font-ui);
-  --font-article: var(--font-ui);
-  --font-heading: var(--font-ui);
-  --font-page-heading: var(--font-ui);
-  --font-meta: var(--font-ui);
-  --font-ui-label: var(--font-ui);
   /* 代码：Maple Mono（拉丁）→ 中文落到 'Sgx Code CJK'（code.css 里按等宽节奏放大到 2ch）→ 系统等宽 */
   --font-code: 'Maple Mono', 'Sgx Code CJK', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Noto Sans Mono CJK SC', monospace;
-  --gray-gradient: rgba(226, 231, 224, 0.38), var(--paper-bg);
-  --box-shadow: var(--paper-shadow-lift);
-  color-scheme: light;
 }
 
-:root[data-theme='dark'] {
-  --black: 234, 235, 229;
-  --gray: 166, 175, 164;
-  --gray-light: 56, 64, 56;
-  --gray-dark: 225, 229, 221;
-  --paper-bg: #171b18;
-  --paper-bg-deep: #111411;
-  --paper-surface: #202620;
-  --paper-surface-muted: #273026;
-  --paper-surface-rgb: 32, 38, 32;
-  --paper-line: rgba(217, 229, 213, 0.08);
-  --paper-line-strong: rgba(217, 229, 213, 0.14);
-  --paper-ink: #eaebe5;
-  --paper-ink-soft: #b5beb1;
-  --paper-ink-faint: #899487;
-  --paper-control: rgba(42, 51, 43, 0.72);
-  --paper-control-hover: rgba(52, 64, 53, 0.88);
-  --paper-nav: rgba(32, 38, 32, 0.92);
-  --paper-card-wash-top: rgba(39, 47, 39, 0.72);
-  --paper-card-wash-bottom: rgba(28, 33, 28, 0.52);
-  --paper-page-bg: linear-gradient(180deg, rgba(23, 27, 24, 0.98) 0%, rgba(17, 20, 17, 0.98) 100%);
-  --paper-detail-bg: linear-gradient(
-    180deg,
-    rgba(23, 27, 24, 0.98) 0%,
-    rgba(17, 20, 17, 0.98) 100%
-  );
-  --paper-texture-light: rgba(255, 255, 255, 0.035);
-  --paper-shadow: 0 1px 2px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(0, 0, 0, 0.08);
-  --paper-shadow-lift: 0 1px 2px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.1);
-  --paper-theme-color: #171b18;
-  color-scheme: dark;
+* {
+  box-sizing: border-box;
+}
+
+/* 和主站一致：手机 / 平板不预留滚动条槽（悬浮滚动条，抽屉宽度按 100vw 算才是 290px@412）；
+   只在桌面断点（主站 layout-pc 同为 1024px）保留，避免切页时内容左右跳。 */
+@media (min-width: 1024px) {
+  html {
+    scrollbar-gutter: stable;
+  }
 }
 
 body {
-  font-family: var(--font-body);
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   text-align: left;
-  background: linear-gradient(var(--gray-gradient)) no-repeat;
-  background-size: 100% 600px;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  color: rgb(var(--gray-dark));
-  font-size: 20px;
-  line-height: 1.7;
+  background: transparent;
+  color: var(--sgx-text-primary);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 main {
@@ -125,8 +55,11 @@ h4,
 h5,
 h6 {
   margin: 0 0 0.5rem 0;
-  color: rgb(var(--black));
+  color: var(--sgx-text-primary);
+  font-family: var(--font-ui);
+  font-weight: 400;
   line-height: 1.2;
+  letter-spacing: 0;
 }
 
 h1 {
@@ -155,24 +88,16 @@ b {
 }
 
 a {
-  color: var(--accent);
+  color: inherit;
 }
 
-a:hover {
-  color: var(--accent);
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
 p {
   margin-bottom: 1em;
-}
-
-.prose p {
-  margin-bottom: 2em;
-}
-
-textarea {
-  width: 100%;
-  font-size: 16px;
 }
 
 input {
@@ -207,7 +132,7 @@ img {
 }
 
 blockquote {
-  border-left: 4px solid var(--accent);
+  border-left: 4px solid;
   padding: 0 0 0 20px;
   margin: 0;
   font-size: 1.333em;
@@ -215,131 +140,7 @@ blockquote {
 
 hr {
   border: none;
-  border-top: 1px solid rgb(var(--gray-light));
-}
-
-@media (max-width: 720px) {
-  body {
-    font-size: 18px;
-  }
-
-  main {
-    padding: 92px 18px 42px;
-  }
-}
-
-.sr-only {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  position: absolute !important;
-  height: 1px;
-  width: 1px;
-  overflow: hidden;
-  /* IE6, IE7 - a 0 height clip, off to the bottom right of the visible 1px box */
-  clip: rect(1px 1px 1px 1px);
-  /* maybe deprecated but we need to support legacy browsers */
-  clip: rect(1px, 1px, 1px, 1px);
-  /* modern browsers, clip-path works inwards from each corner */
-  clip-path: inset(50%);
-  /* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
-  white-space: nowrap;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  background: var(--paper-bg);
-}
-
-/* 和主站一致：手机 / 平板不预留滚动条槽（悬浮滚动条，抽屉宽度按 100vw 算才是 290px@412）；
-   只在桌面断点（主站 layout-pc 同为 1024px）保留，避免切页时内容左右跳。 */
-@media (min-width: 1024px) {
-  html {
-    scrollbar-gutter: stable;
-  }
-}
-
-body {
-  min-height: 100vh;
-  background: var(--paper-page-bg);
-  color: var(--paper-ink);
-  font-family: var(--font-body);
-  font-size: 16px;
-  line-height: 1.8;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: linear-gradient(var(--paper-rule) 1px, transparent 1px);
-  background-size: 100% 32px;
-  opacity: 0.28;
-}
-
-.publication-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  background: linear-gradient(180deg, rgba(var(--paper-surface-rgb), 0.28), transparent 42%);
-}
-
-.glass-card {
-  position: relative;
-  border: 1px solid var(--paper-line);
-  border-radius: 8px;
-  background: var(--paper-surface);
-  box-shadow: var(--paper-shadow);
-  animation: card-in 420ms both;
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease,
-    background 180ms ease;
-}
-
-.glass-card::after {
-  content: none;
-}
-
-.theme-icon-sun {
-  display: none;
-}
-
-:root[data-theme='dark'] .theme-icon-moon {
-  display: none;
-}
-
-:root[data-theme='dark'] .theme-icon-sun {
-  display: block;
-}
-
-.glass-card:hover {
-  transform: translateY(-1px);
-  border-color: var(--paper-line-strong);
-  box-shadow: var(--paper-shadow-lift);
-}
-
-.glass-card:nth-of-type(2) {
-  animation-delay: 80ms;
-}
-
-.glass-card:nth-of-type(3) {
-  animation-delay: 140ms;
-}
-
-a {
-  color: inherit;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
+  border-top: 1px solid var(--sgx-divider);
 }
 
 .site-icon {
@@ -350,17 +151,7 @@ a {
   vertical-align: middle;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-page-heading);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
+/* 标签页标题区（term.html） */
 .archive-header-shared {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
@@ -377,8 +168,8 @@ h6 {
 
 .archive-header-shared .archive-kicker {
   margin: 0;
-  color: var(--paper-accent);
-  font-family: var(--font-ui-label);
+  color: var(--sgx-primary);
+  font-family: var(--font-ui);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -388,7 +179,7 @@ h6 {
 .archive-header-shared .archive-title {
   max-width: 760px;
   margin: 8px 0 0;
-  color: var(--paper-ink);
+  color: var(--sgx-text-primary);
   font-size: clamp(2.4rem, 5.5vw, 4rem);
   line-height: 1.08;
 }
@@ -407,47 +198,14 @@ h6 {
 .archive-header-shared .archive-subtitle {
   max-width: 30ch;
   margin: 0;
-  color: var(--paper-ink-soft);
-  font-family: var(--font-ui-label);
-  font-size: 1.03rem;
-  line-height: 1.76;
-}
-
-.archive-header-shared .archive-note {
-  max-width: 42ch;
-  margin: 0;
-  color: var(--paper-ink-faint);
-  font-family: var(--font-meta);
-  font-size: 0.7rem;
-  line-height: 1.75;
-  text-align: center;
-}
-
-.archive-header-shared > .archive-note {
-  align-self: center;
-  justify-self: center;
-  max-width: 300px;
-  margin: 0;
-  color: var(--paper-ink-soft);
-  font-family: var(--font-ui-label);
+  color: var(--sgx-text-secondary);
+  font-family: var(--font-ui);
   font-size: 1.03rem;
   line-height: 1.76;
 }
 
 .page-header-spacing {
   margin-bottom: var(--page-header-spacing);
-}
-
-@keyframes card-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -461,6 +219,10 @@ h6 {
 }
 
 @media (max-width: 720px) {
+  main {
+    padding: 92px 18px 42px;
+  }
+
   .page-header-spacing {
     margin-bottom: var(--page-header-spacing-mobile);
   }
@@ -470,8 +232,7 @@ h6 {
     gap: 14px;
   }
 
-  .archive-header-shared .archive-copy,
-  .archive-header-shared .archive-note {
+  .archive-header-shared .archive-copy {
     display: block;
     max-width: none;
     text-align: left;

@@ -53,6 +53,3 @@ for (const selector of ['.sgx-tb-pill', '.sgx-tb-nav', '.sgx-drawer-sheet']) {
   });
 }
 
-test('构建产物里没有 Astro 资源目录残留', () => {
-  assert.equal(existsSync(path.join(REPO, 'web/public/_astro')), false);
-});

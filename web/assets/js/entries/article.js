@@ -1,7 +1,7 @@
 // 文章页：分享按钮、giscus 评论、代码块复制。
-// 分享 / 评论逻辑来自原 ShareButtons.astro、GiscusComment.astro 的脚本，配置改从页面上的 data-* 读。
+// 分享 / 评论的配置从页面上的 data-* 读。
 
-/* ---------- 分享（原 ShareButtons.astro） ---------- */
+/* ---------- 分享 ---------- */
 (() => {
   if (window.__styrigxShareButtons) return;
   window.__styrigxShareButtons = true;
@@ -76,7 +76,7 @@ document.addEventListener('click', async (event) => {
   }, 1600);
 });
 
-/* ---------- giscus（原 GiscusComment.astro）：主题跟页面深浅色 ---------- */
+/* ---------- giscus：主题跟页面深浅色 ---------- */
 (() => {
   const container = document.querySelector('[data-comment-provider="giscus"]');
   if (!container) return;
