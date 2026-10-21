@@ -1,8 +1,7 @@
 // 顶栏：九宫格抽屉开关（含文章目录）+ 文章页阅读进度细线。
-// 原 src/components/blog/BlogTopNav.astro 的 <script>，逻辑原样搬过来（只改了 import 路径）；
-// Hugo 是整页跳转，没有 ClientRouter，astro:page-load 不会触发，末尾的 initTopbar() 直接初始化。
+// 整页跳转，末尾的 initTopbar() 直接初始化。
 import { initSheet } from '../blog/sgx-sheet';
-import { mountNavfolioTocSpy } from '../blog/toc-spy';
+import { mountTocSpy } from '../blog/toc-spy';
 
 /** 文章阅读进度：#article-start（正文）从顶栏下沿开始读，到正文底部离开视口底部为 100%；画在长条底边。 */
 let ticking = false;
@@ -74,7 +73,7 @@ function initTopbar() {
       li.dataset.tocExpanded = 'true';
     for (const b of drawer.querySelectorAll<HTMLElement>('[data-toc-toggle]'))
       b.setAttribute('aria-expanded', 'true');
-    if (drawer.querySelector('[data-toc-root]')) mountNavfolioTocSpy();
+    if (drawer.querySelector('[data-toc-root]')) mountTocSpy();
   }
 
   updateProgress();
@@ -86,6 +85,5 @@ if (!w.__sgxTopbarGlobal) {
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   window.addEventListener('pageshow', onScroll);
-  document.addEventListener('astro:page-load', initTopbar);
 }
 initTopbar();

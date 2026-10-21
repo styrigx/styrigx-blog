@@ -6,8 +6,7 @@
  * - 每次开 / 关换一代 gen，上一代没跑完的 rAF / 计时器一律作废（主站 CI 偶发卡死的修复）。
  * - 点遮罩（<dialog> 本身、面板以外）关闭；Esc（原生 cancel）带动画关闭；按钮再点一次关闭。
  *
- * 与主站不同：不在历史里压哨兵（系统返回关抽屉）。博客用 Astro ClientRouter，哨兵出栈的 popstate
- * 会被路由器当成同页导航重新拉取整页，所以这里只靠 遮罩 / Esc / 按钮 / 点项 关闭。
+ * 与主站不同：不在历史里压哨兵（系统返回关抽屉），只靠 遮罩 / Esc / 按钮 / 点项 关闭。
  */
 const DRAWER_MS = 220;
 
@@ -117,13 +116,6 @@ export function initSheet(dlg: HTMLDialogElement, btn: HTMLElement): SheetHandle
   });
   window.addEventListener('pageshow', (e) => {
     if ((e as PageTransitionEvent).persisted && dlg.open) {
-      gen++;
-      settleClosed();
-    }
-  });
-  /* ClientRouter 换页前收起（新页面会换掉这个节点） */
-  document.addEventListener('astro:before-swap', () => {
-    if (dlg.open) {
       gen++;
       settleClosed();
     }

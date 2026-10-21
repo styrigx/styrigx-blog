@@ -1,25 +1,4 @@
-// 返回顶部按钮（原 ScrollToTopButton.astro 的 <script>，原样搬过来）。
-type ScrollToTopState = {
-  lifecycleReady: boolean;
-  observers: Set<IntersectionObserver>;
-};
-
-const scrollTopWindow = window as Window & {
-  __navfolioScrollTopState?: ScrollToTopState;
-};
-const scrollTopState = (scrollTopWindow.__navfolioScrollTopState ??= {
-  lifecycleReady: false,
-  observers: new Set<IntersectionObserver>(),
-});
-
-const disconnectScrollToTopObservers = () => {
-  for (const observer of scrollTopState.observers) {
-    observer.disconnect();
-  }
-
-  scrollTopState.observers.clear();
-};
-
+// 回到顶部按钮：页面滚过一屏（标记点 .scroll-top-marker 离开视口上方）才出现，点了平滑回顶（减弱动效时直接跳）。
 const initScrollToTopButton = () => {
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-scroll-top-button]')) {
     if (button.dataset.scrollTopReady === 'true') {
@@ -44,7 +23,6 @@ const initScrollToTopButton = () => {
       });
 
       observer.observe(marker);
-      scrollTopState.observers.add(observer);
     }
 
     button.addEventListener('click', () => {
@@ -57,9 +35,3 @@ const initScrollToTopButton = () => {
 };
 
 initScrollToTopButton();
-
-if (!scrollTopState.lifecycleReady) {
-  scrollTopState.lifecycleReady = true;
-  document.addEventListener('astro:before-swap', disconnectScrollToTopObservers);
-  document.addEventListener('astro:page-load', initScrollToTopButton);
-}

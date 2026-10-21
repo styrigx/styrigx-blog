@@ -92,7 +92,7 @@ test.describe('顶栏 v4 布局', () => {
       const r = await page.evaluate(() => {
         const box = (el) => el.getBoundingClientRect();
         const pill = box(document.querySelector('.sgx-tb-pill'));
-        const nav = box(document.querySelector('.sgx-tb-nav'));
+        const nav = box(document.querySelector('.sgx-topbar > .sgx-tb-nav'));
         const bar = box(document.querySelector('.sgx-topbar'));
         const meEl = document.querySelector('.sgx-tb-me');
         const me = box(meEl);

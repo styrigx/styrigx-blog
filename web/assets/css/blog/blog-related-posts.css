@@ -1,11 +1,12 @@
-/* 来自 @navfolio/theme-default src/styles/blog-related-posts.css（MIT，Copyright (c) 2026 Navfolio），博客原样沿用。 */
+/* 文章底部「相关文章」：最早取自 @navfolio/theme-default 的 blog-related-posts.css（MIT，Copyright (c) 2026 Navfolio）。
+   颜色只用共享外壳的色彩角色（--sgx-*）。 */
 .related-posts {
   padding: 18px;
 }
 
 .related-posts h2 {
   margin: 0 0 14px;
-  color: var(--paper-ink);
+  color: var(--sgx-text-primary);
   font-size: 0.9rem;
   line-height: 1.2;
   text-transform: uppercase;
@@ -21,28 +22,12 @@
   grid-template-columns: 1fr;
   gap: 5px;
   align-items: center;
-  color: var(--paper-ink);
+  color: var(--sgx-text-primary);
   text-decoration: none;
 }
 
-.related-posts a.has-thumbnail {
-  grid-template-columns: 58px minmax(0, 1fr);
-  gap: 10px;
-}
-
 .related-posts a:hover strong {
-  color: var(--paper-accent);
-}
-
-.related-posts img {
-  display: block;
-  width: 58px;
-  height: 48px;
-  border-radius: 6px;
-  background: var(--paper-surface-muted);
-  object-fit: cover;
-  box-shadow: var(--paper-shadow);
-  filter: saturate(0.7);
+  color: var(--sgx-primary);
 }
 
 .related-posts span {
@@ -61,6 +46,6 @@
 }
 
 .related-posts small {
-  color: var(--paper-ink-faint);
+  color: var(--sgx-text-tertiary);
   font-size: 0.75rem;
 }

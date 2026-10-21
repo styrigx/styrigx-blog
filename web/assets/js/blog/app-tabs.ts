@@ -4,7 +4,7 @@
  *   键盘方向键（← → Home End）都能切换；滑动时指示器跟手（--seg-pos 是小数）。
  * - 地址 hash 反映当前页签，刷新 / 返回都停在原页签：首页 = 无 hash，#posts，#topics，
  *   专题筛选 #topics/tag/<slug>、#topics/category/<slug>、#topics/series/<slug>（系列：滚到并高亮系列卡）。
- *   只用 history.replaceState（保留 ClientRouter 的 history.state），切页签不新增历史记录。
+ *   只用 history.replaceState（保留已有的 history.state），切页签不新增历史记录。
  * - 每个页签记住自己的滚动位置；减弱动效（系统设置或主站 rm=1 → html.reduced-motion）时不做过渡动画。
  */
 import { TABS, parseHash, routeHash } from './app-tabs-route.js';
@@ -210,7 +210,7 @@ export function initAppTabs() {
       e.preventDefault();
       go(route);
     },
-    /* 捕获阶段：赶在 ClientRouter 的链接拦截之前 */
+    /* 捕获阶段：赶在其他点击处理之前 */
     true,
   );
 
@@ -220,13 +220,6 @@ export function initAppTabs() {
     if (route) go(route);
   };
   window.addEventListener('hashchange', onHash);
-  document.addEventListener(
-    'astro:before-swap',
-    () => window.removeEventListener('hashchange', onHash),
-    {
-      once: true,
-    },
-  );
 
   /* ----- 横向滑动切换 ----- */
   let sx = 0;

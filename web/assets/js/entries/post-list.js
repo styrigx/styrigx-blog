@@ -1,7 +1,7 @@
-// 标签页文章卡：点卡片空白处也打开文章（原 BlogPostList.astro 的内联脚本，原样搬过来）。
+// 标签页文章卡：点卡片空白处也打开文章。
 (() => {
-  if (window.__navfolioArchivePostClick) return;
-  window.__navfolioArchivePostClick = true;
+  if (window.__sgxArchivePostClick) return;
+  window.__sgxArchivePostClick = true;
   document.addEventListener('click', (event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
       return;

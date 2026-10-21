@@ -2,9 +2,9 @@ type TocLink = HTMLAnchorElement;
 type TocRoot = HTMLElement;
 
 type TocWindow = Window & {
-  __navfolioTocSpyCleanup?: () => void;
-  __navfolioTocSpyEvents?: boolean;
-  __navfolioTocSpyPageKey?: string;
+  __sgxTocSpyCleanup?: () => void;
+  __sgxTocSpyEvents?: boolean;
+  __sgxTocSpyPageKey?: string;
 };
 
 import { buildHashIdCandidates, normalizeHash } from './toc-hash';
@@ -179,7 +179,7 @@ const initBranchToggles = (signal: AbortSignal): void => {
   }
 };
 
-const initNavfolioToc = (): (() => void) | null => {
+const initTocSpy = (): (() => void) | null => {
   if (getTocLinks().length === 0) {
     return null;
   }
@@ -366,33 +366,31 @@ const initNavfolioToc = (): (() => void) | null => {
   };
 };
 
-export const mountNavfolioTocSpy = (): void => {
+export const mountTocSpy = (): void => {
   const tocWindow = window as TocWindow;
   const cleanupCurrent = () => {
-    tocWindow.__navfolioTocSpyCleanup?.();
-    tocWindow.__navfolioTocSpyCleanup = undefined;
-    tocWindow.__navfolioTocSpyPageKey = undefined;
+    tocWindow.__sgxTocSpyCleanup?.();
+    tocWindow.__sgxTocSpyCleanup = undefined;
+    tocWindow.__sgxTocSpyPageKey = undefined;
   };
 
   const mountCurrentPage = () => {
     const pageKey = `${window.location.pathname}${window.location.search}`;
-    if (tocWindow.__navfolioTocSpyPageKey === pageKey) {
+    if (tocWindow.__sgxTocSpyPageKey === pageKey) {
       return;
     }
 
     cleanupCurrent();
 
-    const cleanup = initNavfolioToc();
+    const cleanup = initTocSpy();
     if (cleanup) {
-      tocWindow.__navfolioTocSpyCleanup = cleanup;
-      tocWindow.__navfolioTocSpyPageKey = pageKey;
+      tocWindow.__sgxTocSpyCleanup = cleanup;
+      tocWindow.__sgxTocSpyPageKey = pageKey;
     }
   };
 
-  if (!tocWindow.__navfolioTocSpyEvents) {
-    tocWindow.__navfolioTocSpyEvents = true;
-    document.addEventListener('astro:page-load', mountCurrentPage);
-    document.addEventListener('astro:before-swap', cleanupCurrent);
+  if (!tocWindow.__sgxTocSpyEvents) {
+    tocWindow.__sgxTocSpyEvents = true;
     window.addEventListener('pagehide', cleanupCurrent);
   }
 
