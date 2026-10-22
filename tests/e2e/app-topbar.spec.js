@@ -2,7 +2,7 @@
 // - 顶栏三块：九宫格 · 长条 · 头像；没有 ‹ 返回、没有 ⋮。
 // - 列表页长条 = 分段滑块 首页 · 文章 · 专题（没有归档）：点、滑、键盘切换，hash 记住页签。
 // - 指示器 / 阅读进度用主色（--sgx-accent = --sgx-primary，跟 sgx-ui cookie 的 pal / 自定义种子 accent）；抽屉当前项 / 目录当前节是 tonal。
-// - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：首页 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
+// - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：主站 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
 // - 每个页面长条都只有 首页 · 文章 · 专题；文章页「文章」高亮，长条底边一条强调色细线是阅读进度。
 import { test, expect } from '@playwright/test';
 
@@ -286,7 +286,7 @@ test.describe('导航抽屉', () => {
     await expect(drawer(page)).toHaveAttribute('data-state', 'open');
   }
 
-  test('首页 / 奇趣 / 日刻 / 博客（同主站）；博客是 tonal 当前项；毛玻璃面板，宽度同主站', async ({
+  test('主站 / 奇趣 / 日刻 / 博客（同主站）；博客是 tonal 当前项；毛玻璃面板，宽度同主站', async ({
     page,
   }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -296,7 +296,7 @@ test.describe('导航抽屉', () => {
     const lists = drawer(page).locator('.sgx-drawer-list');
     await expect(lists).toHaveCount(1);
     await expect(lists.nth(0).locator('.sgx-drawer-label')).toHaveText([
-      '首页',
+      '主站',
       '奇趣',
       '日刻',
       '博客',
@@ -416,11 +416,11 @@ test.describe('导航抽屉', () => {
     await openDrawer(page);
   });
 
-  test('英文：Home / Curio / Daymark / Blog；头像去主站英文账号页', async ({ page }) => {
+  test('英文：Main site / Curio / Daymark / Blog；头像去主站英文账号页', async ({ page }) => {
     await page.goto('/en/', { waitUntil: 'domcontentloaded' });
     await openDrawer(page);
     await expect(drawer(page).locator('.sgx-drawer-label')).toHaveText([
-      'Home',
+      'Main site',
       'Curio',
       'Daymark',
       'Blog',
