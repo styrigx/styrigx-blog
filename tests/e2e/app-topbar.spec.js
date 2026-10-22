@@ -373,6 +373,36 @@ test.describe('导航抽屉', () => {
     await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  test('底栏搜索：原地打开搜索层（不跳站、不刷新），带星图标、自动聚焦，结果走本站 /api/search；返回只关搜索层', async ({ page }) => {
+    const asked = [];
+    await page.route('**/api/search**', (r) => {
+      asked.push(new URL(r.request().url()).host);
+      return r.fulfill({ json: { hits: [{ title: 'Muse 玩法手册', subtitle: '博客', url: '/post/2026-10-07-muse-playbook/', type: 'post' }] } });
+    });
+    await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
+    const origin = new URL(page.url()).origin;
+    await page.evaluate(() => { window.__noReload = 1; });
+    const histLen = await page.evaluate(() => history.length);
+    await openDrawer(page);
+    await drawer(page).locator('.sgx-drawer-search').click();
+    await expect(page.locator('.sgx-srch-bar')).toBeVisible();
+    await expect(page.locator('#sgx-srch-input')).toBeFocused();
+    await expect(drawer(page)).toBeHidden();
+    expect(new URL(page.url()).origin).toBe(origin);
+    expect(await page.evaluate(() => window.__noReload)).toBe(1);
+    await expect(page.locator('.sgx-srch-bar .sgx-srch-ic path').first()).toHaveAttribute('d', /^M14\.9 9\.6/);
+    await expect(page.locator('.sgx-srch-empty .sgx-srch-empty-ic path').first()).toHaveAttribute('d', /^M14\.9 9\.6/);
+    await page.locator('#sgx-srch-input').fill('muse');
+    await expect(page.locator('#sgx-srch-list [data-srch-u]').first()).toContainText('Muse 玩法手册');
+    expect(asked.length).toBeGreaterThan(0);
+    expect(asked.every((h) => h === new URL(origin).host)).toBe(true);
+    expect(await page.evaluate(() => history.length)).toBe(histLen + 1);
+    await page.goBack();
+    await expect(page.locator('.sgx-srch-bar')).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`${ARTICLE}$`));
+    expect(await page.evaluate(() => window.__noReload)).toBe(1);
+  });
+
   test('刚点开就 Esc：照样关上，之后还能再开', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {

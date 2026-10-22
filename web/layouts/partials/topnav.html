@@ -75,10 +75,11 @@
       </section>
       {{- end }}
       </div>
-      {{- /* 底栏搜索框（同主站）：博客还没接原地搜索层，点了去主站搜索（/search/ → 主站首页打开搜索层） */}}
+      {{- /* 底栏搜索框（同主站）：entries/topnav.ts 点击时原地打开搜索层（entries/search-host.js），不跳站；href 只是没 JS 时的退路 */}}
       {{- $sp := $nav.search.path }}{{ if $isEn }}{{ $sp = print "/en" $sp }}{{ end }}
       <div class="sgx-drawer-foot"><a class="sgx-drawer-search" href="{{ $nav.search.origin }}{{ $sp }}" aria-label="{{ cond $isEn $nav.search.en $nav.search.zh }}"><span class="sgx-drawer-search-ic">{{ index $nav.icons $nav.search.icon | safeHTML }}</span><span class="sgx-drawer-search-label" aria-hidden="true">{{ cond $isEn $nav.search.en $nav.search.zh }}</span></a></div>
     </nav>
   </dialog>
 </header>
+{{ partial "script.html" (dict "name" "search-host.js") }}
 {{ partial "script.html" (dict "name" "topnav.ts") }}
