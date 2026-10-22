@@ -31,3 +31,6 @@ AGENTS.md
 
 # local preview screenshots and working notes
 preview/
+
+# search index (scripts/build-search-index.mjs default --out; contains private posts, never published)
+search-index.blog.json

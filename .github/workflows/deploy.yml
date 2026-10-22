@@ -49,6 +49,11 @@ jobs:
         # Tailwind CLI 构建 CSS（scripts/build-css.mjs）→ hugo --minify -s web → web/public/
         run: npm run build
 
+      - name: Search index builds (site:blog)
+        # 博客自己写全站搜索索引（styrigx-search-index 读 KV site:blog）：标题 + 描述 + 正文纯文本，private 文章标 private。
+        # 每个分支都跑：网址和构建产物对不上 / 0 篇文章 → 红。文件写到 RUNNER_TEMP，不进 web/public（不随 Pages 发出去）。
+        run: node scripts/build-search-index.mjs --out "$RUNNER_TEMP/search-index.blog.json"
+
       - name: Shared shell copy matches lock / main site
         # 共享外壳（主站 styrigx-space web/shared/shell）是唯一来源：副本不许手改，版本要和主站 main 一致
         run: node scripts/sync-shell.mjs --check
@@ -57,7 +62,7 @@ jobs:
         run: node scripts/gen-code-tokens.mjs --check
 
       - name: Unit tests
-        # 网址映射 / 订阅 / 锚点 / 网关路由 / 构建 CSS 毛玻璃 / 代码配色对比度 / sgx-ui cookie 继承
+        # 网址映射 / 订阅 / 锚点 / 网关路由 / 构建 CSS 毛玻璃 / 代码配色对比度 / sgx-ui cookie 继承 / 搜索索引
         run: npm test
 
       - name: Install Playwright browsers and CJK fonts
@@ -96,6 +101,17 @@ jobs:
           apiToken: ${{ secrets.STYRIGX_BLOG_PAGES_DEPLOY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy web/public --project-name=styrigx-blog --commit-dirty=true
+
+      - name: Upload search index to KV (site:blog)
+        # 和 Pages 部署同一个令牌：STYRIGX_BLOG_PAGES_DEPLOY 需要额外带「Workers KV Storage: Edit」权限。
+        # 命名空间 styrigx-search-index（主站 styrigx-space 的搜索 Worker 读它）。
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.STYRIGX_BLOG_PAGES_DEPLOY }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          command: kv key put site:blog --path=${{ runner.temp }}/search-index.blog.json --namespace-id=bd1babcc3fe74d58994e254c74d34ced --remote
 
       - name: Smoke test - every page directory is behind the gateway
         # 只发不带 cookie 的只读请求。web/public/ 里每个页面所在的一级目录各抽一个页面，未登录必须是网关回的 302；
