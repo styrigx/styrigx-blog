@@ -58,11 +58,18 @@ function initTopbar() {
           }
           return;
         }
-        /* 抽屉项：当前项（博客）只关闭；其他项、头部头像（主站账号页）、底栏搜索框（主站搜索）先收起再跳转 */
+        /* 抽屉项：当前项（博客）只关闭；其他项、头部头像（主站账号页）先收起再跳转；
+           底栏搜索框原地打开搜索层（entries/search-host.ts），不跳主站——必须在这次点击里同步调用，安卓才弹键盘 */
         const a = t.closest?.<HTMLAnchorElement>('a.sgx-drawer-item, a.sgx-drawer-me, a.sgx-drawer-search');
         if (!a) return;
         e.preventDefault();
         e.stopPropagation();
+        const srch = (window as unknown as { SgxSearch?: { open: (o: object) => void } }).SgxSearch;
+        if (a.classList.contains('sgx-drawer-search') && srch) {
+          /* 抽屉不压历史哨兵：同步关掉，搜索层自己 push 一条 */
+          srch.open({ from: a, ghost: drawer, handoff: () => { sheet.close(true); return false; } });
+          return;
+        }
         sheet.close();
         if (a.getAttribute('aria-current') !== 'page') location.assign(a.href);
       },
