@@ -1,4 +1,4 @@
-// 文章页：分享按钮、giscus 评论、代码块复制。
+// 文章页：分享按钮、代码块复制。（评论 2026-10-22 撤了，改成三个子站共用的留言板 /guestbook/）
 // 分享 / 评论的配置从页面上的 data-* 读。
 
 /* ---------- 分享 ---------- */
@@ -75,36 +75,3 @@ document.addEventListener('click', async (event) => {
     if (label) label.textContent = original;
   }, 1600);
 });
-
-/* ---------- giscus：主题跟页面深浅色 ---------- */
-(() => {
-  const container = document.querySelector('[data-comment-provider="giscus"]');
-  if (!container) return;
-  const d = container.dataset;
-  const dark = () => document.documentElement.classList.contains('dark');
-  const script = document.createElement('script');
-  script.src = 'https://giscus.app/client.js';
-  script.async = true;
-  script.crossOrigin = 'anonymous';
-  script.setAttribute('data-repo', d.repo || '');
-  script.setAttribute('data-repo-id', d.repoId || '');
-  script.setAttribute('data-category', d.category || '');
-  script.setAttribute('data-category-id', d.categoryId || '');
-  script.setAttribute('data-mapping', d.mapping || 'pathname');
-  script.setAttribute('data-strict', d.strict || '0');
-  script.setAttribute('data-reactions-enabled', d.reactionsEnabled || '1');
-  script.setAttribute('data-emit-metadata', d.emitMetadata || '0');
-  script.setAttribute('data-input-position', d.inputPosition || 'bottom');
-  script.setAttribute('data-theme', dark() ? d.darkTheme || 'dark' : d.lightTheme || 'light');
-  script.setAttribute('data-lang', d.lang || 'zh-CN');
-  script.setAttribute('data-loading', d.loading || 'lazy');
-  container.replaceChildren(script);
-  /* 系统深浅色变了（cookie 是 system 时 sgx-inherit 会改 <html class>）：同步 giscus */
-  new MutationObserver(() => {
-    const iframe = document.querySelector('iframe.giscus-frame');
-    iframe?.contentWindow?.postMessage(
-      { giscus: { setConfig: { theme: dark() ? d.darkTheme || 'dark' : d.lightTheme || 'light' } } },
-      'https://giscus.app',
-    );
-  }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-})();

@@ -37,13 +37,7 @@ shareHeading: 分享这篇文章
 shareCopy: 复制链接
 shareCopied: 已复制
 shareNative: 分享
-comments: 评论
-commentsNote: 给这篇文章留句话。
 scrollTop: 返回顶部
-licensePre: '文章采用 '
-licenseUrl: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans
-licensePost: ' 协议'
-mainSite: 主站
 codeCopy: 复制
 codeCopied: 已复制
 codePlain: 纯文本
@@ -51,3 +45,8 @@ notFoundTitle: 这一页不在这里
 notFoundBody: 链接可能已经改变，或者它从未存在。你可以回到博客首页看看最新文章。
 notFoundBack: 返回首页
 notFoundDesc: 这页暂时没有找到，可能已经迁移或还没有写下。
+# 留言板（/guestbook/，顶栏右圆）
+guestbook: 留言板
+guestbookNote: '三个子站共用这块留言板，随便聊聊。'
+# 404 页长条里的页名
+notFoundPill: 页面不存在

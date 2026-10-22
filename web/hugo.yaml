@@ -91,28 +91,22 @@ markup:
 params:
   description: 'Sloan Gray 的个人博客：AI 工具实战、开源项目复盘与个人基础设施笔记。中英双语。'
   pageDescription: 'Sloan Gray（Styrigx）的个人博客：AI 应用、开源项目与基础设施笔记，中英双语更新。'
-  since: 2020
   author: 'Sloan Gray'
-  email: 'styrigx@gmail.com'
-  github: 'https://github.com/styrigx'
-  x: 'https://x.com/styrigx'
-  mainSite: 'https://styrigx.com'
-  # 头像由主站统一管理（设置页可换）
-  avatar: 'https://styrigx.com/avatar/192.webp'
-  comments:
-    enabled: true
-    provider: giscus
+  # 留言板（/guestbook/）：博客、日刻、奇趣三个子站共用同一个 Giscus 讨论串（styrigx/styrigx 仓库 Discussions，Announcements 分类，term = guestbook）。
+  # 三个站这段一字不差；改了任何一项就不是同一串留言了。
+  # 2026-10-22 起文章页不再有评论（原来按 pathname 存在 styrigx-blog 仓库 Discussions 的 Blog Comments 分类，旧讨论留在那里不动）。
+  guestbook:
     giscus:
-      repo: 'styrigx/styrigx-blog'
-      repoId: 'R_kgDOUvdSCg'
-      category: 'Blog Comments'
-      categoryId: 'DIC_kwDOUvdSCs4DGjtd'
-      # 评论按 pathname 绑定：文章地址（带尾斜杠）必须和旧站一模一样
-      mapping: 'pathname'
+      repo: 'styrigx/styrigx'
+      repoId: 'R_kgDOVDhNiA'
+      category: 'Announcements'
+      categoryId: 'DIC_kwDOVDhNiM4DJVrs'
+      mapping: 'specific'
+      term: 'guestbook'
       strict: '0'
       reactionsEnabled: '1'
       emitMetadata: '0'
-      inputPosition: 'bottom'
+      inputPosition: 'top'
       lightTheme: 'light'
       darkTheme: 'dark'
       loading: 'lazy'

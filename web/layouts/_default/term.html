@@ -6,7 +6,7 @@
 {{ define "body" }}
 {{- $posts := partial "posts-sorted.html" (dict "pages" .Pages "mode" "archive") -}}
 <body class="page-tag">
-{{ partial "topnav.html" (dict "page" . "mode" "links" "activeTab" "topics") }}
+{{ partial "topnav.html" (dict "page" . "mode" "links") }}
 <main class="oui-archive-wrap">
   <div class="tag-body">
     <header class="archive-hero archive-header-shared page-header-spacing">
@@ -21,6 +21,5 @@
     {{ partial "post-list.html" (dict "posts" $posts) }}
   </div>
 </main>
-{{ partial "footer.html" . }}
 </body>
 {{ end }}
