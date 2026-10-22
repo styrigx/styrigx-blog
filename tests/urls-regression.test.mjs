@@ -162,7 +162,7 @@ describe('旧网址回归（换皮不改路由）', () => {
     }
   });
 
-  it('导航抽屉：首页 / 奇趣 / 日刻 / 博客（主站共享外壳 nav.json，同主站）；头像去主站账号页，底栏搜索去主站搜索', async () => {
+  it('导航抽屉：主站 / 奇趣 / 日刻 / 博客（主站共享外壳 nav.json，同主站）；头像去主站账号页，底栏搜索去主站搜索', async () => {
     const html = await (await fetch(base + '/')).text();
     const hrefs = [...html.matchAll(/class="sgx-drawer-item"[^>]*href="([^"]+)"/g)].map(
       (m) => m[1],
