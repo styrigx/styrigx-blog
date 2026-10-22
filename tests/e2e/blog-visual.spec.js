@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // One UI 视觉基线：每个页面 × 浅色/深色 × 手机 390×844 / 桌面 1200px。
 // 基线图在 tests/e2e/blog-visual.spec.js-snapshots/，只在 CI 生成（update-snapshots.yml），同版本 Chromium 对比。
 
-// 顶栏右圆头像从主站远程加载：截图前等所有图片解码完，避免头像有时在、有时空导致基线抖动
+// 抽屉头头像等远程图片：截图前等所有图片解码完，避免有时在、有时空导致基线抖动
 async function imagesReady(page) {
   await page
     .waitForFunction(() => Array.from(document.images).every((i) => i.complete), null, {
@@ -19,6 +19,7 @@ const PAGES = [
   { name: 'article-en', path: '/en/post/2026-10-07-muse-playbook/' },
   { name: 'tag', path: '/tags/ai' },
   { name: 'not-found', path: '/404.html' },
+  { name: 'guestbook', path: '/guestbook/' },
 ];
 
 for (const { name, path } of PAGES) {
@@ -29,6 +30,8 @@ for (const { name, path } of PAGES) {
         localStorage.removeItem('navfolio-theme');
       } catch {}
     });
+    // 留言板的 Giscus 是第三方 iframe（内容随留言变）：基线里只截卡片和说明，不加载 giscus
+    await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     // 等字体与图片稳定
     await page.evaluate(() => document.fonts.ready);
@@ -86,7 +89,7 @@ test.describe('顶栏 v4 布局', () => {
     });
   });
 
-  test('三块：左圆九宫格 · 长条 · 右圆头像（52px，间距 8，贴两端）', async ({ page }) => {
+  test('三块：左圆九宫格 · 长条 · 右圆留言板（52px，间距 8，贴两端）', async ({ page }) => {
     for (const path of ['/', '/post/2026-10-07-muse-playbook/']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       const r = await page.evaluate(() => {
@@ -94,7 +97,7 @@ test.describe('顶栏 v4 布局', () => {
         const pill = box(document.querySelector('.sgx-tb-pill'));
         const nav = box(document.querySelector('.sgx-topbar > .sgx-tb-nav'));
         const bar = box(document.querySelector('.sgx-topbar'));
-        const meEl = document.querySelector('.sgx-tb-me');
+        const meEl = document.querySelector('.sgx-topbar > .sgx-tb-end');
         const me = box(meEl);
         return {
           pillH: pill.height,
@@ -102,7 +105,7 @@ test.describe('顶栏 v4 布局', () => {
           me: [me.width, me.height],
           gaps: [Math.round(pill.left - nav.right), Math.round(me.left - pill.right)],
           sides: [Math.round(nav.left - bar.left), Math.round(bar.right - me.right)],
-          meInteractive: !!meEl.closest('a, button') || !!meEl.querySelector('a, button'),
+          meHref: meEl.getAttribute('href'),
         };
       });
       expect(r.pillH).toBe(52);
@@ -110,16 +113,16 @@ test.describe('顶栏 v4 布局', () => {
       expect(r.me).toEqual([52, 52]);
       expect(r.gaps).toEqual([8, 8]);
       expect(r.sides).toEqual([0, 0]);
-      expect(r.meInteractive, '右圆头像只展示，不可点击').toBe(false);
+      expect(r.meHref, '右圆 = 留言板').toBe('/guestbook/');
     }
   });
 
-  test('右圆头像点了不跳转', async ({ page }) => {
+  test('右圆留言板点了去本站 /guestbook/（不跳域名）', async ({ page }) => {
+    await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
     await page.goto('/post/2026-10-07-muse-playbook/', { waitUntil: 'domcontentloaded' });
-    const before = page.url();
-    await page.locator('.sgx-tb-me').click();
-    await page.waitForTimeout(300);
-    expect(page.url()).toBe(before);
+    const origin = new URL(page.url()).origin;
+    await page.locator('.sgx-topbar > .sgx-tb-end').click();
+    await expect(page).toHaveURL(origin + '/guestbook/');
   });
 
   test('英文浏览器（没有 cookie）：/ 跳 /en/ 一次后停住，不循环', async ({ browser }) => {

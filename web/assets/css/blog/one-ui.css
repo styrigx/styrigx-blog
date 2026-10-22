@@ -289,19 +289,6 @@ mark {
   color: var(--sgx-on-primary);
 }
 
-/* ---------- 页脚 ---------- */
-.oui-footer {
-  border-top: 1px solid var(--sgx-outline-variant);
-  padding: 28px 18px 40px;
-  color: var(--sgx-text-secondary);
-  font-size: 12px;
-  text-align: center;
-}
-
-.oui-footer a {
-  color: var(--sgx-primary);
-}
-
 /* ---------- 减弱动效 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .oui-btn-primary {
@@ -404,12 +391,6 @@ mark {
 
 .oui-archive-wrap .note-num {
   color: var(--sgx-text-secondary);
-}
-
-/* ---------- 页脚适配 ---------- */
-footer.oui-footer,
-.oui-footer {
-  border-top: 1px solid var(--sgx-outline-variant);
 }
 
 /* ---------- 标签页文章列表适配 ---------- */

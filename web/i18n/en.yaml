@@ -41,13 +41,7 @@ shareHeading: Share this post
 shareCopy: Copy link
 shareCopied: Copied!
 shareNative: Share
-comments: Comments
-commentsNote: Quiet notes for this article.
 scrollTop: Back to top
-licensePre: 'Articles licensed under '
-licenseUrl: https://creativecommons.org/licenses/by-nc-sa/4.0/
-licensePost: ''
-mainSite: Home
 codeCopy: Copy
 codeCopied: Copied
 codePlain: Plain text
@@ -55,3 +49,8 @@ notFoundTitle: This page isn't here
 notFoundBody: The link may have changed, or it never existed. Head back to the blog home for the latest posts.
 notFoundBack: Back to home
 notFoundDesc: This page could not be found.
+# 留言板（/guestbook/，顶栏右圆）
+guestbook: Guestbook
+guestbookNote: 'One guestbook for Blog, Daymark and Curio — say hi.'
+# 404 页长条里的页名
+notFoundPill: Page not found

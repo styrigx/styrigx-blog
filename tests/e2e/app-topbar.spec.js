@@ -1,9 +1,9 @@
 // 2026-10-20 沉浸式 app 顶栏验收（不截图，只断言行为和布局）：
-// - 顶栏三块：九宫格 · 长条 · 头像；没有 ‹ 返回、没有 ⋮。
+// - 顶栏三块：九宫格 · 长条 · 留言板圆（/guestbook/）；没有 ‹ 返回、没有 ⋮，没有版权页脚。
 // - 列表页长条 = 分段滑块 首页 · 文章 · 专题（没有归档）：点、滑、键盘切换，hash 记住页签。
 // - 指示器 / 阅读进度用主色（--sgx-accent = --sgx-primary，跟 sgx-ui cookie 的 pal / 自定义种子 accent）；抽屉当前项 / 目录当前节是 tonal。
 // - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：主站 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
-// - 每个页面长条都只有 首页 · 文章 · 专题；文章页「文章」高亮，长条底边一条强调色细线是阅读进度。
+// - 只有列表页（首页）长条是 首页 · 文章 · 专题；其他页（文章、标签、404、留言板）长条只有页名；文章页长条底边一条强调色细线是阅读进度。
 import { test, expect } from '@playwright/test';
 
 test.use({ viewport: { width: 412, height: 915 } });
@@ -71,11 +71,16 @@ async function expectTab(page, id) {
 
 test.describe('顶栏', () => {
   for (const path of ['/', '/en/', ARTICLE, '/tags/ai/', '/404.html']) {
-    test(`${path}：九宫格 + 长条 + 头像，没有 ‹ 和 ⋮`, async ({ page }) => {
+    test(`${path}：九宫格 + 长条 + 留言板圆，没有 ‹ 和 ⋮，没有页脚`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('.sgx-topbar > *')).toHaveCount(3);
       await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveCount(1);
       await expect(page.locator('.sgx-topbar > .sgx-tb-pill')).toHaveCount(1);
-      await expect(page.locator('.sgx-topbar > .sgx-tb-me')).toHaveCount(1);
+      await expect(page.locator('.sgx-topbar > a.sgx-tb-end')).toHaveAttribute(
+        'href',
+        path.startsWith('/en/') ? '/en/guestbook/' : '/guestbook/',
+      );
+      await expect(page.locator('.sgx-tb-me, footer, .oui-footer')).toHaveCount(0);
       await expect(
         page.locator('[data-sgx-back], .sgx-tb-back, [data-sgx-more], .sgx-tb-more'),
       ).toHaveCount(0);
@@ -268,13 +273,11 @@ test.describe('列表页页签', () => {
     await expectTab(page, 'topics');
   });
 
-  test('标签页：同样的滑块，专题高亮，点了回列表页对应页签', async ({ page }) => {
+  test('标签页：长条只有页名（标签名），没有滑块', async ({ page }) => {
     await page.goto('/tags/ai/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('.sgx-seg [aria-current="page"]')).toHaveText('专题');
-    await page.locator('.sgx-seg a', { hasText: '文章' }).click();
-    await expect(page).toHaveURL(/\/#posts$/);
-    await ready(page);
-    await expectTab(page, 'posts');
+    await expect(page.locator('.sgx-tb-pill .sgx-seg')).toHaveCount(0);
+    await expect(page.locator('.sgx-tb-pill .sgx-tb-title')).toHaveText('AI');
+    await expect(page.locator('#sgx-drawer [data-nav="blog"]')).toHaveAttribute('href', '/');
   });
 });
 
@@ -437,31 +440,24 @@ test.describe('导航抽屉', () => {
   });
 });
 
-test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
-  test('长条只有 首页 · 文章 · 专题，文章高亮，没有标题；点页签回列表页对应页签', async ({
-    page,
-  }) => {
+test.describe('文章页：页名 + 进度细线 + 抽屉目录', () => {
+  test('长条只有页名（文章标题），没有页签；不放图标', async ({ page }) => {
     await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
-    const seg = page.locator('.sgx-tb-pill .sgx-seg a');
-    await expect(seg).toHaveText(['首页', '文章', '专题']);
-    await expect(page.locator('.sgx-seg [aria-current="page"]')).toHaveText('文章');
+    await expect(page.locator('.sgx-tb-pill .sgx-seg')).toHaveCount(0);
     await expect(page.locator('.sgx-prog-title, #sgx-toc-sheet, .mobile-article-toc')).toHaveCount(
       0,
     );
-    const pillText = (await page.locator('.sgx-tb-pill').innerText()).replace(/\s+/g, '');
-    expect(pillText).toBe('首页文章专题');
-    await seg.filter({ hasText: '专题' }).click();
-    await expect(page).toHaveURL(/\/#topics$/);
-    await ready(page);
-    await expectTab(page, 'topics');
-  });
-
-  test('英文文章：Home · Posts · Topics，Posts 高亮，链接到 /en/', async ({ page }) => {
-    await page.goto('/en' + ARTICLE, { waitUntil: 'domcontentloaded' });
-    const seg = page.locator('.sgx-tb-pill .sgx-seg a');
-    await expect(seg).toHaveText(['Home', 'Posts', 'Topics']);
-    await expect(page.locator('.sgx-seg [aria-current="page"]')).toHaveText('Posts');
-    await expect(seg.nth(1)).toHaveAttribute('href', '/en/#posts');
+    const title = (await page.locator('h1').first().innerText()).trim();
+    await expect(page.locator('.sgx-tb-pill .sgx-tb-title')).toHaveText(title);
+    await expect(page.locator('.sgx-tb-pill svg')).toHaveCount(0);
+    /* 标题太长：一行省略，不换行、不撑破长条 */
+    const t = await page.locator('.sgx-tb-pill .sgx-tb-title').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { ws: cs.whiteSpace, ov: cs.textOverflow, h: el.getBoundingClientRect().height };
+    });
+    expect(t.ws).toBe('nowrap');
+    expect(t.ov).toBe('ellipsis');
+    expect(t.h).toBeLessThan(30);
   });
 
   test('进度细线在长条底边，随滚动填满（强调色）', async ({ page }) => {
@@ -535,12 +531,62 @@ test.describe('文章页：三页签 + 进度细线 + 抽屉目录', () => {
     await expect(drawer).toBeHidden();
   });
 
-  test('非文章页：抽屉里没有目录、长条没有进度线，仍是三页签', async ({ page }) => {
-    for (const path of ['/', '/tags/ai/', '/404.html']) {
+  test('非文章页：抽屉里没有目录、长条没有进度线；首页三页签，其他页只有页名', async ({ page }) => {
+    for (const [path, name] of [['/', null], ['/tags/ai/', 'AI'], ['/404.html', '页面不存在'], ['/guestbook/', '留言板']]) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('.sgx-drawer-toc, [data-sgx-progress]')).toHaveCount(0);
-      await expect(page.locator('.sgx-tb-pill .sgx-seg-btn')).toHaveText(['首页', '文章', '专题']);
+      if (name === null) {
+        await expect(page.locator('.sgx-tb-pill .sgx-seg-btn')).toHaveText(['首页', '文章', '专题']);
+      } else {
+        await expect(page.locator('.sgx-tb-pill .sgx-seg')).toHaveCount(0);
+        await expect(page.locator('.sgx-tb-pill .sgx-tb-title')).toHaveText(name);
+      }
     }
+  });
+
+  test('留言板：右圆进 /guestbook/，卡片里插入共用 Giscus（specific term=guestbook、输入框在上、主题跟深浅色）；英文页 lang=en', async ({ page }) => {
+    const dark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
+    const giscus = [];
+    await page.route('https://giscus.app/**', (r) => {
+      giscus.push(r.request().url());
+      return r.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
+    });
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.locator('.sgx-topbar .sgx-tb-end').click();
+    await expect(page).toHaveURL(/\/guestbook\/$/);
+    await expect(page.locator('.sgx-topbar .sgx-tb-end')).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.guestbook-card')).toBeVisible();
+    const s = page.locator('[data-giscus] script[src="https://giscus.app/client.js"]');
+    await expect(s).toHaveCount(1);
+    for (const [k, v] of [
+      ['data-repo', 'styrigx/styrigx'],
+      ['data-repo-id', 'R_kgDOVDhNiA'],
+      ['data-category', 'Announcements'],
+      ['data-category-id', 'DIC_kwDOVDhNiM4DJVrs'],
+      ['data-mapping', 'specific'],
+      ['data-term', 'guestbook'],
+      ['data-strict', '0'],
+      ['data-reactions-enabled', '1'],
+      ['data-input-position', 'top'],
+      ['data-lang', 'zh-CN'],
+      ['data-theme', dark ? 'dark' : 'light'],
+    ]) {
+      await expect(s, k).toHaveAttribute(k, v);
+    }
+    expect(giscus.length).toBeGreaterThan(0);
+    const box = await page.locator('.guestbook-card').boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize().width);
+    await page.goto('/en/guestbook/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('.sgx-tb-pill .sgx-tb-title')).toHaveText('Guestbook');
+    await expect(page.locator('[data-giscus] script')).toHaveAttribute('data-lang', 'en');
+  });
+
+  test('文章页没有评论区了（改成留言板）', async ({ page }) => {
+    await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
+    await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.comment-section, [data-comment-provider], [data-giscus], iframe.giscus-frame')).toHaveCount(0);
   });
 
   test('系列文章：系列小块（第 n / N 篇 + 上一篇），点系列名到专题', async ({ page }) => {
