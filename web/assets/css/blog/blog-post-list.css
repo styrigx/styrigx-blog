@@ -211,7 +211,7 @@
 .post-tag:focus-visible,
 .title-link:focus-visible {
   border-radius: 4px;
-  outline: 2px solid var(--sgx-outline-variant);
+  outline: 2px solid var(--sgx-focus-ring);
   outline-offset: 3px;
 }
 

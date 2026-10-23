@@ -2,19 +2,19 @@
    比例按 13 套预设 × 亮 / 暗 + 随机自定义种子都 ≥ 4.6:1 算出（行号 ≥ 3:1），背景含代码面和高亮行。 */
 :root {
   --blog-code-hl: color-mix(in srgb, var(--sgx-primary) 14%, var(--blog-code-surface));
-  /* 关键字：primary 80%（最低 4.74:1 @ #ff1e31/light） */
+  /* 关键字：primary 80%（最低 4.86:1 @ #d055a9/light） */
   --blog-code-kw: color-mix(in srgb, var(--sgx-primary) 80%, var(--sgx-text-primary));
-  /* 函数 / 类型 / 属性：secondary 75%（最低 4.80:1 @ #1202d9/light） */
-  --blog-code-fn: color-mix(in srgb, var(--sgx-secondary) 75%, var(--sgx-text-primary));
-  /* 字符串：tertiary 75%（最低 4.69:1 @ #1202d9/light） */
+  /* 函数 / 类型 / 属性：secondary 80%（最低 4.73:1 @ #ff1e31/light） */
+  --blog-code-fn: color-mix(in srgb, var(--sgx-secondary) 80%, var(--sgx-text-primary));
+  /* 字符串：tertiary 75%（最低 4.71:1 @ #1202d9/light） */
   --blog-code-str: color-mix(in srgb, var(--sgx-tertiary) 75%, var(--sgx-text-primary));
-  /* 数字 / 常量 / 转义 / 正则：danger 75%（最低 4.84:1 @ #1202d9/light） */
+  /* 数字 / 常量 / 转义 / 正则：danger 75%（最低 4.76:1 @ #1202d9/light） */
   --blog-code-num: color-mix(in srgb, var(--sgx-danger) 75%, var(--sgx-text-primary));
-  /* 注释：text-secondary 100%（最低 5.41:1 @ #1202d9/light） */
+  /* 注释：text-secondary 100%（最低 5.35:1 @ #1202d9/light） */
   --blog-code-cm: var(--sgx-text-secondary);
-  /* 运算符 / 标点 / 提示符 / 输出：text-secondary 100%（最低 5.41:1 @ #1202d9/light） */
+  /* 运算符 / 标点 / 提示符 / 输出：text-secondary 100%（最低 5.35:1 @ #1202d9/light） */
   --blog-code-op: var(--sgx-text-secondary);
-  /* 标题：primary 80%（最低 4.74:1 @ #ff1e31/light） */
+  /* 标题：primary 80%（最低 4.86:1 @ #d055a9/light） */
   --blog-code-hd: color-mix(in srgb, var(--sgx-primary) 80%, var(--sgx-text-primary));
   /* 行号：text-tertiary 100%（最低 3.41:1 @ #1202d9/light） */
   --blog-code-ln: var(--sgx-text-tertiary);

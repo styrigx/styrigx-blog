@@ -1,65 +1,74 @@
 /* ============================================================
  * 博客 One UI 外观（设计稿第二版）
  * 颜色只用主站共享外壳的色彩角色（--sgx-*，sgx-shell.css，scripts/sync-shell.mjs 同步）：
- * 13 套预设 × 亮 / 暗 + 自定义种子；深色 / 调色板 / 自定义色 / 减弱动效跟主站 sgx-ui cookie
+ * 22 套预设 × 亮 / 暗 + 自定义种子；深色 / 调色板 / 自定义色 / 减弱动效跟主站 sgx-ui cookie
  * （sgx-inherit.html 首帧前设 <html class="dark" data-theme data-palette>）。不要在组件里写颜色值。
+ * 三层规则同主站 docs/palette-usage.md（2026-10-23 PR-G）：Shell（光晕、顶栏、抽屉、内容底板、玻璃）中性、所有主题一样；
+ * Semantic：primary（前景 1）为主——文字 / 链接 / 图标用 ink 档 --sgx-primary，按钮 / 进度 / 选中填充用 --sgx-primary-fill；
+ * secondary 次之，tertiary / tag 零星；前景 5–6 不进组件。顶栏、抽屉、底板不各自绑主题色。
  * ============================================================ */
 
 :root,
 :root[data-theme] {
   color-scheme: light dark;
-  /* 强调色（分段滑块指示器、阅读进度、选中筛选）= 主色 */
-  --sgx-accent: var(--sgx-primary);
-  --sgx-on-accent: var(--sgx-on-primary);
+  /* 强调色填充（阅读进度、选中专题、系列位置以外的实心强调）= 主站填充档 primary-fill（前景 1 本色）+ 自动挑的 on 色；
+     文字 / 图标用 --sgx-primary（ink）。分段滑块指示器不是它，是抽屉当前项同一套 tonal（--sgx-nav-selected，见 components.css） */
+  --sgx-accent: var(--sgx-primary-fill);
+  --sgx-on-accent: var(--sgx-on-primary-fill);
 
   /* One UI 布局常量（非颜色，取自设计稿） */
-  --oui-radius-card: 24px;
+  /* 内容底板圆角 = 主站 .widget（1.75rem） */
+  --oui-radius-card: 28px;
   --oui-radius-pill: 14px;
   --oui-radius-tag: 9px;
   --oui-radius-paper: 28px;
-  --oui-shadow-card: 0 10px 26px rgba(28, 39, 55, 0.1);
+  /* 内容底板阴影 = 主站 .widget 的 One UI 实体阴影（0.5px 内高光 + 接触影 + 环境影） */
+  --oui-shadow-card: inset 0 0.5px 0 rgba(255, 255, 255, 0.65), 0 1px 2px rgba(16, 24, 40, 0.08), 0 12px 32px -12px rgba(16, 24, 40, 0.22);
   --oui-topbar-h: 64px;
-  /* 悬浮顶栏是 position:fixed，不占文档流；内容区顶部必须留出
-   * top 偏移 + 顶栏高度 + 间距 + safe-area，避免标题被顶栏遮住。 */
-  --oui-nav-clear: calc(env(safe-area-inset-top, 0px) + 10px + 54px + 20px);
-}
-
-@media (min-width: 721px) {
-  :root,
-  :root[data-theme] {
-    --oui-nav-clear: calc(env(safe-area-inset-top, 0px) + 18px + 56px + 28px);
-  }
+  /* 悬浮顶栏是 position:fixed，不占文档流；内容区顶部 = 主站 --sgx-content-top：
+   * 顶栏下沿（上边距 --sgx-tb-inset + 顶栏高 --sgx-tb-btn）+ 16px + safe-area（手机 84px，≥ 840 宽 88px）。 */
+  --oui-nav-clear: calc(var(--sgx-tb-inset) + var(--sgx-tb-btn) + 16px + env(safe-area-inset-top, 0px));
 }
 
 :root[data-theme='dark'],
 :root.dark {
-  --oui-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.34);
+  --oui-shadow-card: inset 0 0.5px 0 rgba(255, 255, 255, 0.09), 0 1px 2px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.55);
 }
 
-/* 点缀色：不跟调色板，和主站 input.css 的点缀色同值（主站同样不进色板）。
-   warm / rose = 元信息图标（日期 / 标签），note = <mark> 便签黄 */
+/* ---------- 外壳框（主站一比一）：布局模式（head.html 内联脚本，规则同主站 __layoutMode：宽 ≥ 840、高 ≥ 500 且横屏 = DeX）
+   决定外壳框最宽 Mobile 640 / DeX 1440，顶栏两侧圆和主站同一位置 ---------- */
+html.layout-mobile {
+  --sgx-content-max: 640px;
+}
+
+html.layout-dex {
+  --sgx-content-max: 1440px;
+}
+
+/* ---------- 页面底 + 全页光晕（主站一比一：sgx-base 层 #sgx-wallpaper / --sgx-halo，2026-10-23 底板定稿）----------
+   页面底 = 背景色第 1 档 --sgx-bg-1；七团光只用背景色 7 档 --sgx-bg-1..7；顶栏区域保持干净（--sgx-halo-mask 从顶栏下沿淡入）。
+   独立 fixed 层（不用 body 的 background-attachment:fixed——手机浏览器会忽略它）。 */
 :root {
-  --deco-warm: #8f5a35;
-  --deco-rose: #96465c;
-  --deco-note: #fdf0c8;
-  --deco-on-note: #4a3413;
+  --sgx-halo-a: 0.9;
+  --sgx-halo:
+    radial-gradient(64% 38% at 104% 22%, oklch(from var(--sgx-bg-7) l c h / var(--sgx-halo-a)) 0%, transparent 72%),
+    radial-gradient(68% 40% at -8% 50%, oklch(from var(--sgx-bg-6) l c h / var(--sgx-halo-a)) 0%, transparent 72%),
+    radial-gradient(60% 32% at 96% 100%, oklch(from var(--sgx-bg-5) l c h / var(--sgx-halo-a)) 0%, transparent 70%),
+    radial-gradient(56% 30% at 6% 104%, oklch(from var(--sgx-bg-4) l c h / var(--sgx-halo-a)) 0%, transparent 70%),
+    radial-gradient(46% 26% at 62% 54%, oklch(from var(--sgx-bg-3) l c h / var(--sgx-halo-a)) 0%, transparent 70%),
+    radial-gradient(52% 26% at 28% -6%, oklch(from var(--sgx-bg-2) l c h / var(--sgx-halo-a)) 0%, transparent 70%),
+    radial-gradient(42% 24% at 104% 66%, oklch(from var(--sgx-bg-5) l c h / calc(var(--sgx-halo-a) * 0.6)) 0%, transparent 70%);
+  --sgx-halo-mask: linear-gradient(to bottom, transparent 0, rgb(0 0 0) calc(var(--sgx-tb-inset) + var(--sgx-tb-btn) + 140px));
 }
 
-:root[data-theme='dark'],
 :root.dark {
-  --deco-warm: #e0b183;
-  --deco-rose: #e5a3b3;
-  --deco-note: #4a3a1c;
-  --deco-on-note: #f5e3ae;
+  --sgx-halo-a: 0.85;
 }
 
-/* ---------- 基础 ---------- */
 html {
-  background: var(--sgx-background);
+  background: var(--sgx-bg-1);
 }
 
-/* 壁纸与主站 / 书库同一套：独立 fixed 层铺 --sgx-background-css（随调色板变），
-   不用 body 的 background-attachment:fixed——手机浏览器会忽略它，渐变被拉成整页近似纯色。 */
 body {
   background: transparent;
   color: var(--sgx-text-primary);
@@ -72,8 +81,9 @@ body::before {
   z-index: -1;
   pointer-events: none;
   transform: translateZ(0);
-  background: var(--sgx-background-css);
-  opacity: 0.28;
+  background: var(--sgx-halo);
+  -webkit-mask: var(--sgx-halo-mask);
+  mask: var(--sgx-halo-mask);
 }
 
 ::selection {
@@ -98,7 +108,7 @@ a {
 
 .oui-article-paper.article-card {
   padding: 24px 22px 38px;
-  border: 0;
+  border: 1px solid var(--sgx-outline-variant);
   border-radius: var(--oui-radius-paper);
   background: var(--sgx-mat);
   box-shadow: var(--oui-shadow-card);
@@ -132,8 +142,10 @@ a {
   padding: 20px 22px;
   border: 0;
   border-radius: 8px 22px 22px 8px;
-  background: var(--sgx-primary-container);
-  color: var(--sgx-on-primary-container);
+  /* 大块中性化（主站 PR-G）：中性浅底 + 一条 primary 竖线，不铺主题色容器 */
+  background: var(--sgx-surface-container-low);
+  box-shadow: inset 3px 0 0 var(--sgx-primary);
+  color: var(--sgx-text-primary);
   font-weight: 600;
   line-height: 1.65;
 }
@@ -187,6 +199,7 @@ a {
     top: calc(var(--oui-topbar-h) + 32px);
     padding: 22px;
     border-radius: 22px;
+    border: 1px solid var(--sgx-outline-variant);
     background: var(--sgx-mat);
     box-shadow: var(--oui-shadow-card);
   }
@@ -225,11 +238,12 @@ a {
   }
 }
 
+/* 文中高亮 = 选中态浅底（同 ::selection） */
 mark {
   padding: 1px 3px;
   border-radius: 4px;
-  background: var(--deco-note);
-  color: var(--deco-on-note);
+  background: var(--sgx-primary-container);
+  color: var(--sgx-on-primary-container);
 }
 
 /* ---------- 404 ---------- */
@@ -284,9 +298,15 @@ mark {
   align-items: center;
 }
 
+/* 主按钮 = 主站主按钮：primary-fill 实色 + on-primary-fill 字（≥4.5:1） */
 .oui-btn-primary {
-  background: var(--sgx-primary);
-  color: var(--sgx-on-primary);
+  background: var(--sgx-primary-fill);
+  color: var(--sgx-on-primary-fill);
+}
+
+.oui-btn-primary:focus-visible {
+  outline: 2px solid var(--sgx-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ---------- 减弱动效 ---------- */
@@ -316,8 +336,9 @@ mark {
 }
 
 /* ---------- 文章页：现有组件适配 ---------- */
-/* blog-layout 本身是单栏；双栏由 .oui-article-layout 接管 */
+/* blog-layout 本身是两栏 grid（blog-article.css）；文章页的双栏由 .oui-article-layout 接管，这里改回单栏块（原来没重置 display，宽屏下正文被挤成 420px） */
 .oui-article-main.blog-layout {
+  display: block;
   width: 100%;
   max-width: none;
   padding: 0;
@@ -404,6 +425,7 @@ mark {
 
 .oui-archive-wrap .post-item {
   padding: 20px;
+  border: 1px solid var(--sgx-outline-variant);
   border-radius: var(--oui-radius-card);
   background: var(--sgx-mat);
   box-shadow: var(--oui-shadow-card);

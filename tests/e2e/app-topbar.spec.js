@@ -1,10 +1,17 @@
 // 2026-10-20 沉浸式 app 顶栏验收（不截图，只断言行为和布局）：
 // - 顶栏三块：九宫格 · 长条 · 留言板圆（/guestbook/）；没有 ‹ 返回、没有 ⋮，没有版权页脚。
 // - 列表页长条 = 分段滑块 首页 · 文章 · 专题（没有归档）：点、滑、键盘切换，hash 记住页签。
-// - 指示器 / 阅读进度用主色（--sgx-accent = --sgx-primary，跟 sgx-ui cookie 的 pal / 自定义种子 accent）；抽屉当前项 / 目录当前节是 tonal。
+// - 指示器 = 抽屉当前项同一套 tonal（--sgx-nav-selected，同主站顶栏三栏 .sgx-tb-tab）；阅读进度 = 填充档（--sgx-accent = --sgx-primary-fill）；
+//   都跟 sgx-ui cookie 的 pal / 自定义种子 accent 变；抽屉当前项 / 目录当前节是 tonal。
 // - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：主站 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
 // - 只有列表页（首页）长条是 首页 · 文章 · 专题；其他页（文章、标签、404、留言板）长条只有页名；文章页长条底边一条强调色细线是阅读进度。
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+
+/* 预设种子从共享外壳的 palettes.json 读（主站改种子时不用改测试） */
+const SEEDS = Object.fromEntries(
+  JSON.parse(readFileSync(new URL('../../web/data/sgx-shell/palettes.json', import.meta.url), 'utf8')).presets.map((p) => [p.id, p.seed]),
+);
 
 test.use({ viewport: { width: 412, height: 915 } });
 
@@ -37,15 +44,17 @@ async function ready(page) {
 }
 
 /** 计算 var(--sgx-accent) 的实际颜色 */
-const accentColor = (page) =>
-  page.evaluate(() => {
+const accentColor = (page) => roleColor(page, '--sgx-accent');
+/** 计算任一 --sgx-* 角色的实际颜色 */
+const roleColor = (page, v) =>
+  page.evaluate((v) => {
     const probe = document.createElement('i');
-    probe.style.color = 'var(--sgx-accent)';
+    probe.style.color = 'var(' + v + ')';
     document.body.appendChild(probe);
     const c = getComputedStyle(probe).color;
     probe.remove();
     return c;
-  });
+  }, v);
 
 /** 指示器和当前页签对齐（等过渡结束） */
 async function expectIndicatorOn(page, id) {
@@ -96,7 +105,7 @@ test.describe('顶栏', () => {
 });
 
 test.describe('列表页页签', () => {
-  test('三个页签：首页 · 文章 · 专题，默认首页；指示器是强调色', async ({ page }) => {
+  test('三个页签：首页 · 文章 · 专题，默认首页；指示器是 tonal（--sgx-nav-selected，同主站顶栏三栏）', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await ready(page);
     await expect(page.locator('[role="tablist"] [role="tab"]')).toHaveText([
@@ -105,12 +114,14 @@ test.describe('列表页页签', () => {
       '专题',
     ]);
     await expectTab(page, 'home');
-    const accent = await accentColor(page);
+    const tonal = await roleColor(page, '--sgx-nav-selected');
+    const onTonal = await roleColor(page, '--sgx-on-nav-selected');
     const [ind, txt] = await page.evaluate(() => [
       getComputedStyle(document.querySelector('.sgx-seg-ind')).backgroundColor,
       getComputedStyle(document.querySelector('[data-sgx-tab="home"]')).color,
     ]);
-    expect(ind).toBe(accent);
+    expect(ind).toBe(tonal);
+    expect(txt).toBe(onTonal);
     expect(ind).not.toBe('rgb(0, 0, 0)');
     expect(txt).not.toBe(ind);
     /* 首页面板：标题区 + 最新 3 篇 + 系列卡 */
@@ -311,7 +322,7 @@ test.describe('导航抽屉', () => {
     );
     await expect(drawer(page).locator('.sgx-drawer-me')).toHaveAttribute(
       'href',
-      'https://styrigx.com/settings/account/',
+      'https://styrigx.com/account/',
     );
     await expect(drawer(page).locator('.sgx-drawer-search')).toHaveAttribute(
       'href',
@@ -419,18 +430,18 @@ test.describe('导航抽屉', () => {
     await openDrawer(page);
   });
 
-  test('英文：Main site / Curio / Daymark / Blog；头像去主站英文账号页', async ({ page }) => {
+  test('英文：Space / Curio / Daymark / Blog；头像去主站英文账号页', async ({ page }) => {
     await page.goto('/en/', { waitUntil: 'domcontentloaded' });
     await openDrawer(page);
     await expect(drawer(page).locator('.sgx-drawer-label')).toHaveText([
-      'Main site',
+      'Space',
       'Curio',
       'Daymark',
       'Blog',
     ]);
     await expect(drawer(page).locator('.sgx-drawer-me')).toHaveAttribute(
       'href',
-      'https://styrigx.com/en/settings/account/',
+      'https://styrigx.com/en/account/',
     );
     await expect(drawer(page).locator('.sgx-drawer-search')).toHaveAttribute(
       'href',
@@ -618,7 +629,7 @@ test.describe('跟随主站设置（sgx-ui cookie）', () => {
     const bg = () =>
       page.evaluate(() => getComputedStyle(document.querySelector('.sgx-seg-ind')).backgroundColor);
     const base = await bg();
-    await setUi(context, baseURL, { v: 2, mode: 'light', pal: 'cherry', accent: '#ba1a20' });
+    await setUi(context, baseURL, { v: 2, mode: 'light', pal: 'cherry', accent: SEEDS.cherry });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('html')).toHaveAttribute('data-palette', 'cherry');
     const cherry = await bg();

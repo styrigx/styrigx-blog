@@ -89,7 +89,11 @@ test.describe('顶栏 v4 布局', () => {
     });
   });
 
-  test('三块：左圆九宫格 · 长条 · 右圆留言板（52px，间距 8，贴两端）', async ({ page }) => {
+  test('三块：左圆九宫格 · 长条 · 右圆留言板（手机 52px、间距 8；≥ 840 宽 56px、间距 12；贴两端）', async ({ page }) => {
+    /* 共享外壳尺寸体系（2026-10-23）：--sgx-tb-btn 52 → 56、--sgx-tb-gap 8 → 12（≥ 840 宽） */
+    const wide = page.viewportSize().width >= 840;
+    const B = wide ? 56 : 52;
+    const G = wide ? 12 : 8;
     for (const path of ['/', '/post/2026-10-07-muse-playbook/']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       const r = await page.evaluate(() => {
@@ -108,10 +112,15 @@ test.describe('顶栏 v4 布局', () => {
           meHref: meEl.getAttribute('href'),
         };
       });
-      expect(r.pillH).toBe(52);
-      expect(r.nav).toEqual([52, 52]);
-      expect(r.me).toEqual([52, 52]);
-      expect(r.gaps).toEqual([8, 8]);
+      expect(r.pillH).toBe(B);
+      expect(r.nav).toEqual([B, B]);
+      expect(r.me).toEqual([B, B]);
+      /* 手机：长条拉满，两边各隔 8；≥ 600 宽：长条按内容定宽、居中在顶栏正中（共享外壳），两边间距相等且不小于 --sgx-tb-gap */
+      if (page.viewportSize().width < 600) expect(r.gaps).toEqual([G, G]);
+      else {
+        expect(r.gaps[0]).toBeGreaterThanOrEqual(G);
+        expect(Math.abs(r.gaps[0] - r.gaps[1])).toBeLessThanOrEqual(1);
+      }
       expect(r.sides).toEqual([0, 0]);
       expect(r.meHref, '右圆 = 留言板').toBe('/guestbook/');
     }

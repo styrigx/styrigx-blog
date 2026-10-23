@@ -19,13 +19,7 @@
   box-sizing: border-box;
 }
 
-/* 和主站一致：手机 / 平板不预留滚动条槽（悬浮滚动条，抽屉宽度按 100vw 算才是 290px@412）；
-   只在桌面断点（主站 layout-pc 同为 1024px）保留，避免切页时内容左右跳。 */
-@media (min-width: 1024px) {
-  html {
-    scrollbar-gutter: stable;
-  }
-}
+/* 和主站一致：不预留滚动条槽（主站 2026-10-23 删了 layout-pc，也不再设 scrollbar-gutter），外壳框和顶栏两侧圆与主站同一位置 */
 
 body {
   min-height: 100vh;
