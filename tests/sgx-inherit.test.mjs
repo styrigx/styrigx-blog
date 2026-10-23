@@ -220,9 +220,9 @@ test('坏 cookie / 非法或未知调色板不抛错，回到 lake', () => {
   assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'nosuch' }) }).attrs['data-palette'], undefined);
 });
 
-test('共享外壳副本含 33 套预设（亮 / 暗）和抽屉样式', () => {
+test('共享外壳副本含 22 套预设（亮 / 暗）和抽屉样式', () => {
   const shell = readFileSync(new URL('../web/assets/css/sgx-shell.css', import.meta.url), 'utf8');
-  assert.equal(palettes.presets.length, 33);
+  assert.equal(palettes.presets.length, 22);
   for (const { id } of palettes.presets) {
     if (id === 'lake') continue;
     assert.ok(shell.includes(`:root[data-palette="${id}"] {`), id + ' light');

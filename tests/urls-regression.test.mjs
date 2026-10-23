@@ -188,7 +188,7 @@ describe('旧网址回归（换皮不改路由）', () => {
       'https://daymark.styrigx.com/',
       '/',
     ]);
-    assert.match(html, /<a class="sgx-drawer-me" href="https:\/\/styrigx\.com\/settings\/account\/"/);
+    assert.match(html, /<a class="sgx-drawer-me" href="https:\/\/styrigx\.com\/account\/"/);
     assert.match(html, /<a class="sgx-drawer-search" href="https:\/\/styrigx\.com\/search\/"/);
     assert.doesNotMatch(html, /book\.styrigx\.com/, '书库已下线');
     const en = await (await fetch(base + '/en/')).text();
@@ -201,7 +201,7 @@ describe('旧网址回归（换皮不改路由）', () => {
       'https://daymark.styrigx.com/en/',
       '/en/',
     ]);
-    assert.match(en, /<a class="sgx-drawer-me" href="https:\/\/styrigx\.com\/en\/settings\/account\/"/);
+    assert.match(en, /<a class="sgx-drawer-me" href="https:\/\/styrigx\.com\/en\/account\/"/);
     assert.match(en, /<a class="sgx-drawer-search" href="https:\/\/styrigx\.com\/en\/search\/"/);
   });
 
