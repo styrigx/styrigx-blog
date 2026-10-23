@@ -18,6 +18,7 @@ const palettes = JSON.parse(
 const SGX_SHELL = {
   v: palettes.schemeVersion,
   seeds: Object.fromEntries(palettes.presets.map((p) => [p.id, p.seed])),
+  def: palettes.default,
 };
 
 function enc(obj) {
@@ -214,7 +215,11 @@ test('lang：没 cookie 时只在中文首页按旧记忆 / 浏览器语言跳',
   );
 });
 
-test('坏 cookie / 非法或未知调色板不抛错，回到 lake', () => {
+test('坏 cookie / 非法或未知调色板不抛错，回到主站默认 dustyblue（不写 data-palette）；lake 是普通色板；旧撞色 xlake → lake', () => {
+  assert.equal(palettes.default, 'dustyblue');
+  assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'lake' }) }).attrs['data-palette'], 'lake');
+  assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'xlake' }) }).attrs['data-palette'], 'lake');
+  assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'dustyblue' }) }).attrs['data-palette'], undefined);
   assert.equal(run({ cookie: 'sgx-ui=%%%' }).attrs['data-palette'], undefined);
   assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: '"><x' }) }).attrs['data-palette'], undefined);
   assert.equal(run({ cookie: 'sgx-ui=' + enc({ pal: 'nosuch' }) }).attrs['data-palette'], undefined);
@@ -224,7 +229,6 @@ test('共享外壳副本含 22 套预设（亮 / 暗）和抽屉样式', () => {
   const shell = readFileSync(new URL('../web/assets/css/sgx-shell.css', import.meta.url), 'utf8');
   assert.equal(palettes.presets.length, 22);
   for (const { id } of palettes.presets) {
-    if (id === 'lake') continue;
     assert.ok(shell.includes(`:root[data-palette="${id}"] {`), id + ' light');
     assert.ok(shell.includes(`:root.dark[data-palette="${id}"] {`), id + ' dark');
   }

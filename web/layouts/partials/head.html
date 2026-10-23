@@ -9,6 +9,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {{ partial "sgx-inherit.html" (dict "alt" .alt) }}
+{{- /* 布局模式（同主站 baseof __layoutMode() 的自动规则：宽 ≥ 840、高 ≥ 500 且横屏 = DeX，否则 Mobile）：
+   决定外壳框最宽（Mobile 640 / DeX 1440，one-ui.css），顶栏两侧圆和主站同一位置。博客没有自己的布局开关。 */}}
+<script>(function(){var d=document.documentElement,w=window.innerWidth||1280,h=window.innerHeight||800;d.classList.add(w>=840&&h>=500&&w>h?'layout-dex':'layout-mobile')})();</script>
 <link rel="icon" href="/favicon.svg" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">

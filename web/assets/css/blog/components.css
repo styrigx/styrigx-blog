@@ -8,18 +8,9 @@
   view-transition-name: sgx-topbar;
 }
 
-/* 长条：中间放分段滑块（主站长条里是搜索 · 页名 · 快捷面板，内边距不同） */
+/* 长条：尺寸、材质、手机拉满 / ≥ 600 宽按内容定宽居中全在共享外壳（同主站，不覆盖）；这里只给阅读进度细线一个定位参照 */
 .sgx-tb-pill {
   position: relative;
-  flex: 1;
-  min-width: 0;
-  height: var(--sgx-tb-btn);
-  border-radius: calc(var(--sgx-tb-btn) / 2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px;
-  color: var(--sgx-text-primary);
 }
 
 /* 抽屉导航项下的分隔线（同主站 .sgx-drawer-sep，主站也放在共享外壳段外） */
@@ -31,14 +22,20 @@
 }
 
 
-/* ===== 分段滑块（首页 · 文章 · 专题）：强调色指示器按 --seg-pos（0..2，可为小数，跟手）平移 ===== */
+/* ===== 分段滑块（首页 · 文章 · 专题）= 主站顶栏三栏 .sgx-tb-tabs / .sgx-tb-tab 一比一 =====
+   标签高 --sgx-tb-ic（40px）、15px / 600、间距 4px；当前项 = 抽屉当前项同一套 tonal 药丸（--sgx-nav-selected / --sgx-on-nav-selected），
+   其他是次要文字色，悬停 / 按下走状态层；≥ 600 宽每格最小 88px、左右 16px（长条按内容定宽）。
+   博客多一个跟手滑动的指示器：按 --seg-pos（0..2，可为小数）平移，三格等宽。 */
 .sgx-seg {
+  --seg-gap: 4px;
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: 100%;
-  max-width: 360px;
-  height: 40px;
+  gap: var(--seg-gap);
+  flex: 1;
+  min-width: 0;
+  max-width: 400px;
+  height: var(--sgx-tb-ic);
   margin: 0 auto;
 }
 
@@ -46,12 +43,11 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: calc(100% / 3);
+  width: calc((100% - 2 * var(--seg-gap)) / 3);
   height: 100%;
-  border-radius: 20px;
-  background: var(--sgx-primary);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--sgx-primary) 35%, transparent);
-  transform: translateX(calc(var(--seg-pos, 0) * 100%));
+  border-radius: 999px;
+  background: var(--sgx-nav-selected);
+  transform: translateX(calc(var(--seg-pos, 0) * (100% + var(--seg-gap))));
   transition: transform 0.28s cubic-bezier(0.2, 0, 0, 1);
   pointer-events: none;
 }
@@ -67,32 +63,63 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 40px;
+  height: 100%;
   padding: 0 6px;
   border: 0;
-  border-radius: 20px;
+  border-radius: 999px;
   background: transparent;
   color: var(--sgx-text-secondary);
   font: inherit;
+  font-family: Inter, 'Inter Fallback', ui-sans-serif, system-ui, sans-serif;
   font-size: 15px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.2;
+  letter-spacing: normal;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-decoration: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color 0.2s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .sgx-seg-btn[aria-selected='true'],
 .sgx-seg-btn[aria-current='page'] {
-  color: var(--sgx-on-primary);
+  color: var(--sgx-on-nav-selected);
   font-weight: 700;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sgx-seg-btn:not([aria-selected='true']):hover {
+    background-color: var(--sgx-state-hover-bg);
+    color: var(--sgx-text-primary);
+  }
+}
+
+.sgx-seg-btn:not([aria-selected='true']):active {
+  background-image: linear-gradient(var(--sgx-state-pressed-bg), var(--sgx-state-pressed-bg));
 }
 
 .sgx-seg-btn:focus-visible {
   outline: 2px solid var(--sgx-focus-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+/* 宽屏（≥ 600px）长条按内容定宽（同主站 .sgx-tb-tab）：每格最小 88px、左右 16px，三格等宽 */
+@media (min-width: 600px) {
+  .sgx-seg {
+    flex: 0 0 auto;
+    max-width: none;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sgx-seg-btn {
+    min-width: 88px;
+    padding: 0 16px;
+  }
 }
 
 
@@ -104,17 +131,18 @@
   bottom: 1px;
   height: 2px;
   border-radius: 1px;
-  background: color-mix(in srgb, var(--sgx-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--sgx-primary-fill) 24%, transparent);
   overflow: hidden;
   pointer-events: none;
 }
 
+/* 进度 = 填充档（主站：进度 / 已填的滑块段 = primary-fill） */
 .sgx-tb-progress::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--sgx-primary);
+  background: var(--sgx-accent);
   transform: scaleX(var(--p, 0));
   transform-origin: left center;
 }
@@ -223,7 +251,8 @@
    切换 / 拖动时（is-moving）临时展开，让相邻面板跟着滑进来 */
 /* 左右各伸出 18px（= 列表区左右留白），卡片阴影不被 overflow 裁掉 */
 .sgx-panes {
-  margin: 0 -18px;
+  /* 左右出血到页边距（--sgx-page-m）：滑动时面板贴到屏幕边，内容仍与顶栏两侧圆外缘对齐 */
+  margin: 0 calc(-1 * var(--sgx-page-m, 16px));
   overflow: hidden;
   touch-action: pan-y;
 }
@@ -257,7 +286,7 @@
 .sgx-pane {
   flex: 0 0 100%;
   min-width: 0;
-  padding: calc(92px + env(safe-area-inset-top, 0px)) 18px 8px;
+  padding: var(--oui-nav-clear) var(--sgx-page-m, 16px) 8px;
 }
 
 .sgx-pane:not(.is-active) {
@@ -408,7 +437,8 @@
 .latest-card {
   display: block;
   padding: 16px 18px;
-  border-radius: var(--oui-radius-card, 24px);
+  border: 1px solid var(--sgx-outline-variant);
+  border-radius: var(--oui-radius-card, 28px);
   background: var(--sgx-mat);
   box-shadow: var(--oui-shadow-card);
   color: var(--sgx-text-primary);
@@ -434,7 +464,8 @@
 /* 系列卡 */
 .series-card {
   padding: 18px;
-  border-radius: var(--oui-radius-card, 24px);
+  border: 1px solid var(--sgx-outline-variant);
+  border-radius: var(--oui-radius-card, 28px);
   background: var(--sgx-mat);
   box-shadow: var(--oui-shadow-card);
   transition: box-shadow 0.2s ease;
@@ -442,7 +473,7 @@
 
 .series-card.is-target {
   box-shadow:
-    0 0 0 2px var(--sgx-accent),
+    0 0 0 2px var(--sgx-focus-ring),
     var(--oui-shadow-card);
 }
 
@@ -522,10 +553,10 @@
   align-items: center;
   gap: 7px;
   padding: 11px 15px;
-  border: 0;
+  /* 未选 chip = 中性玻璃 + 中性描边（主站搜索框 / 快捷面板磁贴规则） */
+  border: 1px solid var(--sgx-outline-variant);
   border-radius: 15px;
-  background: var(--sgx-surface-container-lowest);
-  box-shadow: var(--oui-shadow-card);
+  background: var(--sgx-mat);
   color: var(--sgx-text-primary);
   font: inherit;
   font-size: 12px;
@@ -538,14 +569,16 @@
   font-weight: 400;
 }
 
+/* 选中 chip = 主站 chip-selected 角色 */
 .chip[aria-pressed='true'] {
-  background: var(--sgx-accent);
-  color: var(--sgx-on-accent);
+  border-color: transparent;
+  background: var(--sgx-chip-selected);
+  color: var(--sgx-on-chip-selected);
 }
 
 .chip:focus-visible,
 .sgx-sec-more:focus-visible {
-  outline: 2px solid var(--sgx-accent);
+  outline: 2px solid var(--sgx-focus-ring);
   outline-offset: 2px;
 }
 
@@ -607,8 +640,9 @@
   flex-shrink: 0;
   padding: 3px 9px;
   border-radius: 999px;
-  background: var(--sgx-accent);
-  color: var(--sgx-on-accent);
+  /* 系列位置徽标 = 主站信息徽标（第三色族，零星） */
+  background: var(--sgx-badge-info);
+  color: var(--sgx-on-badge-info);
   font-size: 12px;
   font-weight: 700;
 }
@@ -735,20 +769,15 @@
   opacity: 0.96;
 }
 
-.metadata-item-date {
-  --metadata-icon-color: var(--deco-warm);
-}
-
-.metadata-item-words {
-  --metadata-icon-color: var(--sgx-tertiary);
-}
-
+/* 元信息图标：普通图标保持中性（主站 PR-G：只有关键操作用 primary）；标签用 tag 角色（前景 4，零星） */
+.metadata-item-date,
+.metadata-item-words,
 .metadata-item-reading {
-  --metadata-icon-color: var(--sgx-primary);
+  --metadata-icon-color: var(--sgx-text-secondary);
 }
 
 .metadata-item-tags {
-  --metadata-icon-color: var(--deco-rose);
+  --metadata-icon-color: var(--sgx-tag-fg);
 }
 
 .metadata-content {
@@ -792,14 +821,14 @@
   overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--sgx-primary) 24%, transparent) transparent;
+  scrollbar-color: var(--sgx-outline-variant) transparent;
 }
 
 .toc-tree-nested {
   gap: 4px;
   padding-top: 4px;
   padding-left: 13px;
-  border-left: 1px solid color-mix(in srgb, var(--sgx-primary) 14%, transparent);
+  border-left: 1px solid var(--sgx-outline-variant);
 }
 
 .toc-tree-item {
@@ -835,8 +864,8 @@
 
 .toc-branch-toggle:hover,
 .toc-branch-toggle:focus-visible {
-  background: color-mix(in srgb, var(--sgx-primary) 10%, transparent);
-  color: var(--sgx-primary);
+  background: var(--sgx-state-hover-bg);
+  color: var(--sgx-text-primary);
 }
 
 .toc-branch-toggle i {
@@ -884,16 +913,16 @@
   opacity: 1;
 }
 
+/* 当前节 = 抽屉当前项同一套 tonal（--sgx-nav-selected）；悬停走状态层 */
 .toc-card .toc-tree a[data-state='active'],
 .toc-card .toc-tree a[aria-current='true'] {
-  background: color-mix(in srgb, var(--sgx-primary) 16%, transparent);
-  color: var(--sgx-primary);
-  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--sgx-primary) 50%, transparent);
+  background: var(--sgx-nav-selected);
+  color: var(--sgx-on-nav-selected);
 }
 
 .toc-card .toc-tree a[data-state]:not([data-state='active']):not([aria-current='true']):hover {
-  background: color-mix(in srgb, var(--sgx-primary) 10%, transparent);
-  color: var(--sgx-primary);
+  background: var(--sgx-state-hover-bg);
+  color: var(--sgx-text-primary);
 }
 
 @media (max-width: 900px) {
@@ -1028,12 +1057,13 @@
 
 /* ===== 留言板（_default/guestbook.html）：一张 One UI 卡片（同专题卡 .series-card 的材质、圆角、阴影），里面说明 + Giscus ===== */
 .guestbook-wrap {
-  max-width: 820px;
+  --blog-col-max: 820px;
 }
 
 .guestbook-card {
   padding: 18px 16px 8px;
-  border-radius: var(--oui-radius-card, 24px);
+  border: 1px solid var(--sgx-outline-variant);
+  border-radius: var(--oui-radius-card, 28px);
   background: var(--sgx-mat);
   box-shadow: var(--oui-shadow-card);
   color: var(--sgx-text-primary);
@@ -1074,4 +1104,29 @@
   .page-tag main {
     padding-top: 88px;
   }
+}
+
+
+/* ===== 页面外框 = 外壳框（主站一比一，主站 layout 层 .home-wrap / .set-layout 等）=====
+   宽 = --sgx-shell-w、不加横向内边距：手机上左右边线就是顶栏两侧圆的外缘（16px 页边距）；宽屏时内容列在框里居中，按页最宽
+   （列表 / 标签 1104、文章 1018、留言板 820）。顶部第一块内容从 --oui-nav-clear（= 主站 --sgx-content-top）开始。 */
+.page-home main,
+.page-tag main,
+.oui-archive-wrap,
+.oui-article-wrap {
+  box-sizing: border-box;
+  width: var(--sgx-shell-w);
+  max-width: var(--blog-col-max, 1104px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.oui-article-wrap {
+  --blog-col-max: 1018px;
+}
+
+.page-tag main {
+  padding-top: var(--oui-nav-clear);
 }
