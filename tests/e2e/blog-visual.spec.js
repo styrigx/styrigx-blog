@@ -101,8 +101,9 @@ test.describe('顶栏 v4 布局', () => {
         const pill = box(document.querySelector('.sgx-tb-pill'));
         const nav = box(document.querySelector('.sgx-topbar > .sgx-tb-nav'));
         const bar = box(document.querySelector('.sgx-topbar'));
-        const meEl = document.querySelector('.sgx-topbar > .sgx-tb-end');
-        const me = box(meEl);
+        const grp = box(document.querySelector('.sgx-topbar > .sgx-tb-end-group'));
+        const meEl = document.querySelector('.sgx-topbar > .sgx-tb-end-group > .sgx-tb-guestbook');
+        const me = grp;
         return {
           pillH: pill.height,
           nav: [nav.width, nav.height],
@@ -114,7 +115,8 @@ test.describe('顶栏 v4 布局', () => {
       });
       expect(r.pillH).toBe(B);
       expect(r.nav).toEqual([B, B]);
-      expect(r.me).toEqual([B, B]);
+      /* 右胶囊（分享 + 留言板）：高同两侧圆，宽 = 2 × 40 + 2 × 2 + 2px 边线 = 86 */
+      expect(r.me).toEqual([86, B]);
       /* 手机：长条拉满，两边各隔 8；≥ 600 宽：长条按内容定宽、居中在顶栏正中（共享外壳），两边间距相等且不小于 --sgx-tb-gap */
       if (page.viewportSize().width < 600) expect(r.gaps).toEqual([G, G]);
       else {
@@ -122,15 +124,15 @@ test.describe('顶栏 v4 布局', () => {
         expect(Math.abs(r.gaps[0] - r.gaps[1])).toBeLessThanOrEqual(1);
       }
       expect(r.sides).toEqual([0, 0]);
-      expect(r.meHref, '右圆 = 留言板').toBe('/guestbook/');
+      expect(r.meHref, '右胶囊第二个 = 留言板').toBe('/guestbook/');
     }
   });
 
-  test('右圆留言板点了去本站 /guestbook/（不跳域名）', async ({ page }) => {
+  test('右胶囊的留言板点了去本站 /guestbook/（不跳域名）', async ({ page }) => {
     await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
     await page.goto('/post/2026-10-07-muse-playbook/', { waitUntil: 'domcontentloaded' });
     const origin = new URL(page.url()).origin;
-    await page.locator('.sgx-topbar > .sgx-tb-end').click();
+    await page.locator('.sgx-topbar .sgx-tb-guestbook').click();
     await expect(page).toHaveURL(origin + '/guestbook/');
   });
 

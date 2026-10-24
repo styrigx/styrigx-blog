@@ -114,7 +114,7 @@ describe('旧网址回归（换皮不改路由）', () => {
     for (const [url, lang, title] of [['/guestbook/', 'zh-CN', '留言板'], ['/en/guestbook/', 'en', 'Guestbook']]) {
       const html = await (await fetch(base + url)).text();
       assert.match(html, new RegExp('<span class="sgx-tb-title">' + title + '</span>'), url + ' 长条只有页名');
-      assert.match(html, new RegExp('<a class="sgx-tb-end sgx-tb-guestbook" href="' + url.replace(/\//g, '\\/') + '"[^>]*aria-current="page"'), url);
+      assert.match(html, new RegExp('<a class="sgx-tb-gbtn sgx-tb-guestbook" href="' + url.replace(/\//g, '\\/') + '"[^>]*aria-current="page"'), url);
       for (const [k, v] of [['repo', 'styrigx/styrigx'], ['repo-id', 'R_kgDOVDhNiA'], ['category', 'Announcements'], ['category-id', 'DIC_kwDOVDhNiM4DJVrs'],
         ['mapping', 'specific'], ['term', 'guestbook'], ['strict', '0'], ['reactions-enabled', '1'], ['input-position', 'top'], ['lang', lang]]) {
         assert.match(html, new RegExp('data-' + k + '="?' + v.replace('/', '\\/') + '"?[ >]'), url + ' data-' + k);
@@ -205,14 +205,14 @@ describe('旧网址回归（换皮不改路由）', () => {
     assert.match(en, /<a class="sgx-drawer-search" href="https:\/\/styrigx\.com\/en\/search\/"/);
   });
 
-  it('文章页：长条只有页名（文章标题）+ 阅读进度细线，没有页签；右圆留言板；正文里没有内联目录；目录在抽屉底部', async () => {
+  it('文章页：长条只有页名（文章标题）+ 阅读进度细线，没有页签；右胶囊（分享 + 留言板）；正文里没有内联目录；目录在抽屉底部', async () => {
     const html = await (await fetch(base + '/post/2026-10-07-muse-playbook/')).text();
     const pill = html.match(/<div class="sgx-tb-pill[\s\S]*?<\/div>/)[0];
     assert.doesNotMatch(pill, /sgx-seg/);
     const title = html.match(/<h1[^>]*>([^<]+)<\/h1>/)[1].trim();
     assert.match(pill, new RegExp('<span class="sgx-tb-title">' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '</span>'));
     assert.match(pill, /data-sgx-progress/);
-    assert.match(html, /<a class="sgx-tb-end sgx-tb-guestbook" href="\/guestbook\/" aria-label="留言板">/);
+    assert.match(html, /<div class="sgx-tb-end-group">\s*<button type="button" class="sgx-tb-gbtn sgx-tb-share" data-sgx-share aria-label="分享"><svg[^>]*>[\s\S]*?<\/svg><\/button>\s*<a class="sgx-tb-gbtn sgx-tb-guestbook" href="\/guestbook\/" aria-label="留言板">/, '右胶囊 = 分享 + 留言板');
     assert.doesNotMatch(html, /sgx-tb-me|sgx-tb-avatar/);
     assert.doesNotMatch(html, /sgx-prog-title|sgx-toc-sheet|mobile-article-toc/);
     const drawer = html.match(/<dialog id="sgx-drawer"[\s\S]*?<\/dialog>/)[0];

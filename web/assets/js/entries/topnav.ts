@@ -1,7 +1,8 @@
-// 顶栏：九宫格抽屉开关（含文章目录）+ 文章页阅读进度细线。
+// 顶栏：九宫格抽屉开关（含文章目录）+ 文章页阅读进度细线 + 右胶囊的分享按钮。
 // 整页跳转，末尾的 initTopbar() 直接初始化。
 import { initSheet } from '../blog/sgx-sheet';
 import { mountTocSpy } from '../blog/toc-spy';
+import { mountShare } from '../sgx/shell/share.js';
 
 /** 文章阅读进度：#article-start（正文）从顶栏下沿开始读，到正文底部离开视口底部为 100%；画在长条底边。 */
 let ticking = false;
@@ -82,6 +83,9 @@ function initTopbar() {
       b.setAttribute('aria-expanded', 'true');
     if (drawer.querySelector('[data-toc-root]')) mountTocSpy();
   }
+
+  /* 右胶囊的分享按钮（共享外壳 share.js：站长 = 带临时会话的短链，访客 = 当前页地址） */
+  mountShare({ button: r.querySelector('[data-sgx-share]') });
 
   updateProgress();
 }
