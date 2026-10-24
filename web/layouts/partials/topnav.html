@@ -1,4 +1,4 @@
-{{- /* 顶栏「沉浸式 app」（三个子站同主站 v8 一套，2026-10-22）：左圆九宫格 · 中间长条 · 右圆留言板。
+{{- /* 顶栏「沉浸式 app」（三个子站同主站 v8 一套，2026-10-22）：左圆九宫格 · 中间长条 · 右胶囊（分享 + 留言板）。
 - 九宫格：Gmail 式左侧导航抽屉，和主站 styrigx-space 同一份（主站 / 奇趣 / 日刻 / 博客；头部字标 + 头像（链主站），底栏搜索框）；博客是当前项。
   项、图标、样式（宽度、毛玻璃、tonal 当前项、字体）都来自主站共享外壳：data/sgx-shell/nav.json + assets/css/sgx-shell.css
   （scripts/sync-shell.mjs 同步，勿手改）。
@@ -8,7 +8,9 @@
   links   标签页 / 404 / 留言板等子页：只有页名（.title，不给就用页面标题；.sgx-tb-title 居中、太长省略号），不放图标。
   article 文章页：只有页名（文章标题）；长条底边一条强调色细线是阅读进度。
 - 抽屉：导航项分隔线下面，文章页（≥2 个标题）再加「目录」（.toc：partials/toc-items.html 的结果）。
-- 右圆 .sgx-tb-end（共享外壳样式，52px 圆 + 22px 图标）= 留言板：链本站 /guestbook/（英文 /en/guestbook/），三个子站同一个图标、同一个 Giscus 讨论串。
+- 右胶囊 .sgx-tb-end-group（共享外壳样式，2026-10-24；站长和访客一样）= [分享][留言板]：
+  分享 .sgx-tb-share（共享外壳 share.js，entries/topnav.ts 挂上）：站长生成带临时会话的短链再系统分享，访客分享当前页地址；没有系统分享就复制。
+  留言板 .sgx-tb-guestbook：链本站 /guestbook/（英文 /en/guestbook/），三个子站同一个图标、同一个 Giscus 讨论串。
 参数：.page .mode .title .toc */ -}}
 {{- $lang := .page.Language.Lang -}}
 {{- $isEn := eq $lang "en" -}}
@@ -38,7 +40,10 @@
       <span class="sgx-tb-progress" role="progressbar" aria-label="{{ i18n "progress" }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-sgx-progress></span>
       {{- end }}
     </div>
-    <a class="sgx-tb-end sgx-tb-guestbook" href="{{ $gb }}" aria-label="{{ i18n "guestbook" }}"{{ if eq .page.RelPermalink $gb }} aria-current="page"{{ end }}>{{ partial "icon.html" (dict "name" "pen-line") }}</a>
+    <div class="sgx-tb-end-group">
+      <button type="button" class="sgx-tb-gbtn sgx-tb-share" data-sgx-share aria-label="{{ i18n "shareNative" }}">{{ index $nav.icons "share" | safeHTML }}</button>
+      <a class="sgx-tb-gbtn sgx-tb-guestbook" href="{{ $gb }}" aria-label="{{ i18n "guestbook" }}"{{ if eq .page.RelPermalink $gb }} aria-current="page"{{ end }}>{{ partial "icon.html" (dict "name" "pen-line") }}</a>
+    </div>
   </div>
 
   <dialog id="sgx-drawer" class="sgx-drawer" aria-label="{{ cond $isEn $nav.label.en $nav.label.zh }}" data-sgx-sheet="drawer">

@@ -108,6 +108,18 @@
   outline-offset: -2px;
 }
 
+/* 窄手机（< 380px，如 360 宽）：右边换成分享 + 留言板胶囊（共享外壳 .sgx-tb-end-group，86px）后长条窄了 34px，
+   英文「Topics」放不下；只把格子间距 4 → 2px、左右内边距 6 → 2px（字号、高度、指示器、三格等宽都不变），中文本来就放得下 */
+@media (max-width: 379.98px) {
+  .sgx-seg {
+    --seg-gap: 2px;
+  }
+
+  .sgx-seg-btn {
+    padding: 0 2px;
+  }
+}
+
 /* 宽屏（≥ 600px）长条按内容定宽（同主站 .sgx-tb-tab）：每格最小 88px、左右 16px，三格等宽 */
 @media (min-width: 600px) {
   .sgx-seg {

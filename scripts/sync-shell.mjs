@@ -29,6 +29,8 @@ const SITE = {
     { path: 'web/assets/js/sgx/shell/palette-scheme.js', kind: 'file', parts: ['palette-scheme.js'] },
     /* 原地搜索层（抽屉底栏搜索框原地变成贴键盘的底栏 + 结果层，不跳主站；entries/search-host.ts 打包） */
     { path: 'web/assets/js/sgx/shell/search.js', kind: 'file', parts: ['search.js'] },
+    /* 顶栏右胶囊的分享按钮（站长：生成带临时会话的短链再系统分享；访客：分享当前页；entries/topnav.ts 打包） */
+    { path: 'web/assets/js/sgx/shell/share.js', kind: 'file', parts: ['share.js'] },
     /* 导航抽屉项 + 图标（partials/topnav.html）、预设种子 + 引擎版本（partials/sgx-inherit.html） */
     { path: 'web/data/sgx-shell/nav.json', kind: 'json', parts: ['nav.json'] },
     { path: 'web/data/sgx-shell/palettes.json', kind: 'json', parts: ['palettes.json'] },
