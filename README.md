@@ -22,7 +22,7 @@
 
 Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复盘和自建的基础设施。界面是自研的 Styrigx UI，与主站同一套设计：悬浮顶栏、导航抽屉、配色和外观都跟随主站（共享外壳从主站同步）。站点用 Hugo 生成（2026-10 从 Astro / Navfolio 迁来，网址不变），和主站同一套技术栈。
 
-博客只管文章，做成一个沉浸式 app：顶栏左边九宫格打开导航抽屉（主站 / 奇趣 / 日刻 / 博客，和主站同一套；文章页底部是目录），中间长条在列表页是分段滑块 首页 · 文章 · 专题（点、左右滑、方向键都能切），其他页只有页名，右边是留言板。语言、深浅色、配色都在主站设置，博客跟着走。
+博客只管文章，做成一个沉浸式 app：顶栏左边九宫格打开导航抽屉（主站 / 奇趣 / 日刻 / 博客，和主站同一套；文章页底部是目录），中间长条在列表页是分段滑块 首页 · 文章 · 专题（点、左右滑、方向键都能切），其他页只有页名，右边是分享按钮（站长生成带临时会话的短链，访客分享当前页）。语言、深浅色、配色都在主站设置，博客跟着走。
 
 ## 能做什么
 
@@ -30,7 +30,7 @@ Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复
 - 文章页长条是文章标题，底边一条强调色细线是阅读进度；目录在九宫格抽屉底部，当前节高亮；属于系列的文章有「第 n / N 篇」小块。系列写法见 [docs/content-series.md](docs/content-series.md)。
 - 中英双语：中文在 `/`，英文在 `/en/`；语言跟主站设置（没设置时第一次访问按浏览器语言跳转）。
 - 文章地址固定为 `/post/<slug>/`，改标题也不会变。
-- 留言板 `/guestbook/`：博客、日刻、奇趣共用一串 Giscus 留言（styrigx/styrigx 仓库 Discussions）；文章页不再有评论（旧评论留在本仓库 Discussions）。
+- 文章页没有评论（旧评论留在本仓库 Discussions）。
 - RSS（`/rss.xml`、`/en/rss.xml`）和站点地图。
 - 外观和语言跟主站走：深浅色、调色板、强调色、字号、减弱动效、语言都从主站的 `sgx-ui` cookie 读，契约见 [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md)。
 - 字体：界面和正文用 Inter + 系统中文字体；代码块用 Maple Mono（自托管）。代码块是一个容器，带语言 / 文件名 / 复制按钮、行号槽、`hl_lines` 高亮行，配色从主站色彩角色生成（`scripts/gen-code-tokens.mjs`，对比度有单测）。
@@ -71,8 +71,8 @@ npm run test:e2e   # Playwright 行为 + 视觉回归
 ## 目录说明
 
 - `web/content/`：文章，`zh/` 和 `en/` 分开。
-- `web/hugo.yaml`：站点配置（网址规则、语言、留言板、订阅）；`web/i18n/`：界面文案。
-- `web/layouts/`：页面模板和组件（顶栏、页签、卡片、文章、目录、系列、分享、相关文章、留言板、代码块）。
+- `web/hugo.yaml`：站点配置（网址规则、语言、订阅）；`web/i18n/`：界面文案。
+- `web/layouts/`：页面模板和组件（顶栏、页签、卡片、文章、目录、系列、分享、相关文章、代码块）。
 - `web/assets/css/`、`web/assets/js/`：样式和脚本；`sgx-shell.css`、`js/sgx/shell/`、`web/data/sgx-shell/` 是主站共享外壳的副本，用 `npm run shell:sync` 同步、勿手改（版本记在 `sgx-shell.lock.json`）。
 - 锁屏：会话检查全在主站鉴权网关（styrigx-space 仓库 `workers/auth-gateway`），本站 Pages 只放静态文件、不持任何钥匙；`web/static/_worker.js` 只把 pages.dev 跳回正式域名。
 - `web/static/`：原样发布的文件（`_headers`、`_redirects`、字体、图标）。

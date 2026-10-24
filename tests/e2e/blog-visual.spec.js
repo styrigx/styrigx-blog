@@ -19,7 +19,6 @@ const PAGES = [
   { name: 'article-en', path: '/en/post/2026-10-07-muse-playbook/' },
   { name: 'tag', path: '/tags/ai' },
   { name: 'not-found', path: '/404.html' },
-  { name: 'guestbook', path: '/guestbook/' },
 ];
 
 for (const { name, path } of PAGES) {
@@ -30,8 +29,6 @@ for (const { name, path } of PAGES) {
         localStorage.removeItem('navfolio-theme');
       } catch {}
     });
-    // 留言板的 Giscus 是第三方 iframe（内容随留言变）：基线里只截卡片和说明，不加载 giscus
-    await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     // 等字体与图片稳定
     await page.evaluate(() => document.fonts.ready);
@@ -89,7 +86,7 @@ test.describe('顶栏 v4 布局', () => {
     });
   });
 
-  test('三块：左圆九宫格 · 长条 · 右圆留言板（手机 52px、间距 8；≥ 840 宽 56px、间距 12；贴两端）', async ({ page }) => {
+  test('三块：左圆九宫格 · 长条 · 右圆分享（手机 52px、间距 8；≥ 840 宽 56px、间距 12；贴两端）', async ({ page }) => {
     /* 共享外壳尺寸体系（2026-10-23）：--sgx-tb-btn 52 → 56、--sgx-tb-gap 8 → 12（≥ 840 宽） */
     const wide = page.viewportSize().width >= 840;
     const B = wide ? 56 : 52;
@@ -101,22 +98,21 @@ test.describe('顶栏 v4 布局', () => {
         const pill = box(document.querySelector('.sgx-tb-pill'));
         const nav = box(document.querySelector('.sgx-topbar > .sgx-tb-nav'));
         const bar = box(document.querySelector('.sgx-topbar'));
-        const grp = box(document.querySelector('.sgx-topbar > .sgx-tb-end-group'));
-        const meEl = document.querySelector('.sgx-topbar > .sgx-tb-end-group > .sgx-tb-guestbook');
-        const me = grp;
+        const meEl = document.querySelector('.sgx-topbar > .sgx-tb-end');
+        const me = box(meEl);
         return {
           pillH: pill.height,
           nav: [nav.width, nav.height],
           me: [me.width, me.height],
           gaps: [Math.round(pill.left - nav.right), Math.round(me.left - pill.right)],
           sides: [Math.round(nav.left - bar.left), Math.round(bar.right - me.right)],
-          meHref: meEl.getAttribute('href'),
+          meShare: meEl.matches('button[data-sgx-share]'),
         };
       });
       expect(r.pillH).toBe(B);
       expect(r.nav).toEqual([B, B]);
-      /* 右胶囊（分享 + 留言板）：高同两侧圆，宽 = 2 × 40 + 2 × 2 + 2px 边线 = 86 */
-      expect(r.me).toEqual([86, B]);
+      /* 右圆分享：和左边九宫格圆一样大（2026-10-24 留言板撤了，不再是 86px 胶囊） */
+      expect(r.me).toEqual([B, B]);
       /* 手机：长条拉满，两边各隔 8；≥ 600 宽：长条按内容定宽、居中在顶栏正中（共享外壳），两边间距相等且不小于 --sgx-tb-gap */
       if (page.viewportSize().width < 600) expect(r.gaps).toEqual([G, G]);
       else {
@@ -124,16 +120,8 @@ test.describe('顶栏 v4 布局', () => {
         expect(Math.abs(r.gaps[0] - r.gaps[1])).toBeLessThanOrEqual(1);
       }
       expect(r.sides).toEqual([0, 0]);
-      expect(r.meHref, '右胶囊第二个 = 留言板').toBe('/guestbook/');
+      expect(r.meShare, '右圆 = 分享按钮').toBe(true);
     }
-  });
-
-  test('右胶囊的留言板点了去本站 /guestbook/（不跳域名）', async ({ page }) => {
-    await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
-    await page.goto('/post/2026-10-07-muse-playbook/', { waitUntil: 'domcontentloaded' });
-    const origin = new URL(page.url()).origin;
-    await page.locator('.sgx-topbar .sgx-tb-guestbook').click();
-    await expect(page).toHaveURL(origin + '/guestbook/');
   });
 
   test('英文浏览器（没有 cookie）：/ 跳 /en/ 一次后停住，不循环', async ({ browser }) => {

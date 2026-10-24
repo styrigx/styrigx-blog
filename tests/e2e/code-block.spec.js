@@ -12,7 +12,6 @@ const POST = '/post/2026-10-11-key-spec-whitepaper-v2/';
 
 test.beforeEach(async ({ page }) => {
   await page.route('https://styrigx.com/**', (r) => r.fulfill({ status: 204 }));
-  await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
   await page.addInitScript(() => {
     try {
       localStorage.setItem('styrigx-blog-lang', 'zh');

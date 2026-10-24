@@ -92,24 +92,6 @@ params:
   description: 'Sloan Gray 的个人博客：AI 工具实战、开源项目复盘与个人基础设施笔记。中英双语。'
   pageDescription: 'Sloan Gray（Styrigx）的个人博客：AI 应用、开源项目与基础设施笔记，中英双语更新。'
   author: 'Sloan Gray'
-  # 留言板（/guestbook/）：博客、日刻、奇趣三个子站共用同一个 Giscus 讨论串（styrigx/styrigx 仓库 Discussions，Announcements 分类，term = guestbook）。
-  # 三个站这段一字不差；改了任何一项就不是同一串留言了。
-  # 2026-10-22 起文章页不再有评论（原来按 pathname 存在 styrigx-blog 仓库 Discussions 的 Blog Comments 分类，旧讨论留在那里不动）。
-  guestbook:
-    giscus:
-      repo: 'styrigx/styrigx'
-      repoId: 'R_kgDOVDhNiA'
-      category: 'Announcements'
-      categoryId: 'DIC_kwDOVDhNiM4DJVrs'
-      mapping: 'specific'
-      term: 'guestbook'
-      strict: '0'
-      reactionsEnabled: '1'
-      emitMetadata: '0'
-      inputPosition: 'top'
-      lightTheme: 'light'
-      darkTheme: 'dark'
-      loading: 'lazy'
 
 # 构建时可读的环境变量（CI 用）
 security:

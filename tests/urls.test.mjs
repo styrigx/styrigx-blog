@@ -1,7 +1,7 @@
 /**
  * 旧地址保留（Astro → Hugo 迁移）：tests/url-map.json 里旧站的每个地址，在 Hugo 构建（web/public/）里
  * 都还在同一路径（或同一个跳转），RSS / 站点地图地址和条目不变，文章里的标题锚点（目录、外链用的 #id）一个不少，
- * 另外核对：新构建没有多出网关没登记的页面目录。（文章页评论 2026-10-22 撤了，改成三个子站共用的留言板 /guestbook/）
+ * 另外核对：新构建没有多出网关没登记的页面目录。（文章页评论 2026-10-22 撤了；留言板 /guestbook/ 2026-10-24 也撤了，旧地址直接 404）
  * 跑法：npm run build 之后 node --test tests/urls.test.mjs
  */
 import { test } from 'node:test';
@@ -13,8 +13,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(ROOT, 'web/public');
 const map = JSON.parse(readFileSync(path.join(ROOT, 'tests/url-map.json'), 'utf8'));
-/* 旧站之后新加的页面（不在 url-map.json 里）：留言板（2026-10-22） */
-const NEW_PAGES = ['/guestbook/', '/en/guestbook/'];
+/* 旧站之后新加的页面（不在 url-map.json 里）：现在没有（留言板 /guestbook/ 2026-10-24 撤了） */
+const NEW_PAGES = [];
 const SITE = 'https://blog.styrigx.com';
 
 const fileFor = (url) => path.join(PUB, url.endsWith('/') ? url + 'index.html' : url);
@@ -23,6 +23,10 @@ const isAlias = (html) => /http-equiv="refresh"/.test(html);
 
 test('构建产物存在', () => {
   assert.ok(existsSync(PUB), 'web/public/ 不存在：先跑 npm run build');
+});
+
+test('留言板撤了（2026-10-24）：/guestbook/、/en/guestbook/ 不再构建，旧地址走 404', () => {
+  for (const url of ['/guestbook/', '/en/guestbook/']) assert.equal(existsSync(fileFor(url)), false, url + ' 还在');
 });
 
 test('旧站每个页面都在同一路径（不是跳转页）', () => {
@@ -82,7 +86,7 @@ test('canonical 用旧地址', () => {
 
 /* 主站网关（styrigx-space workers/auth-gateway/wrangler.toml）给博客登记的页面路由；新页面目录必须落在这里面，否则不验会话。
    （网关现在登记的是整站 blog.styrigx.com/*，这里仍按目录列，新目录要在这里加一行，提醒核对网关） */
-const GATEWAY = ['/', '/about*', '/archives*', '/post/*', '/tags/*', '/guestbook/*', '/en', '/en/*', '/rss.xml', '/sitemap*', '/pagefind/*'];
+const GATEWAY = ['/', '/about*', '/archives*', '/post/*', '/tags/*', '/en', '/en/*', '/rss.xml', '/sitemap*', '/pagefind/*'];
 const covered = (p) =>
   GATEWAY.some((r) => (r.endsWith('*') ? p.startsWith(r.slice(0, -1)) : p === r));
 

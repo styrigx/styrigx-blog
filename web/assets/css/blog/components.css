@@ -1,11 +1,33 @@
 /* 博客组件样式（web/layouts 里各模板 / partial 的样式）。颜色只用共享外壳的 --sgx-* 角色。
    裸元素选择器（main / h1 / h2）前面带组件根 class；和 one-ui.css 抢同一属性的规则带父级 class，决定谁赢谁输。 */
 /* ===== 顶栏（partials/topnav.html） ===== */
-/* 顶栏三块（九宫格圆 · 长条 · 留言板圆 .sgx-tb-end）的尺寸、位置、毛玻璃材质，和导航抽屉的全部样式，
+/* 顶栏三块（九宫格圆 · 长条 · 分享圆 .sgx-tb-end）的尺寸、位置、毛玻璃材质，和导航抽屉的全部样式，
    都在主站共享外壳 web/assets/css/sgx-shell.css（scripts/sync-shell.mjs 同步）。这里只有博客自己的：
    长条里的分段滑块（首页）、阅读进度细线（文章页）、抽屉里的「目录」。其他页长条里只有页名（共享外壳 .sgx-tb-title）。颜色只用 --sgx-* 角色。 */
 .sgx-topbar {
   view-transition-name: sgx-topbar;
+}
+
+/* 右圆分享（.sgx-tb-end.sgx-tb-share，2026-10-24 留言板撤了）：圆本身用共享外壳 .sgx-tb-end（52px，同九宫格圆）；
+   共享外壳的「生成短链中」样式只写在胶囊按钮 .sgx-tb-gbtn 上，这里给单圆补上同一套（图标呼吸、点了不理；动画 sgx-share-busy 在共享外壳） */
+.sgx-tb-end.is-busy {
+  cursor: progress;
+}
+
+.sgx-tb-end.is-busy svg {
+  animation: sgx-share-busy 0.9s ease-in-out infinite alternate;
+}
+
+.reduced-motion .sgx-tb-end.is-busy svg {
+  animation: none;
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sgx-tb-end.is-busy svg {
+    animation: none;
+    opacity: 0.4;
+  }
 }
 
 /* 长条：尺寸、材质、手机拉满 / ≥ 600 宽按内容定宽居中全在共享外壳（同主站，不覆盖）；这里只给阅读进度细线一个定位参照 */
@@ -106,18 +128,6 @@
 .sgx-seg-btn:focus-visible {
   outline: 2px solid var(--sgx-focus-ring);
   outline-offset: -2px;
-}
-
-/* 窄手机（< 380px，如 360 宽）：右边换成分享 + 留言板胶囊（共享外壳 .sgx-tb-end-group，86px）后长条窄了 34px，
-   英文「Topics」放不下；只把格子间距 4 → 2px、左右内边距 6 → 2px（字号、高度、指示器、三格等宽都不变），中文本来就放得下 */
-@media (max-width: 379.98px) {
-  .sgx-seg {
-    --seg-gap: 2px;
-  }
-
-  .sgx-seg-btn {
-    padding: 0 2px;
-  }
 }
 
 /* 宽屏（≥ 600px）长条按内容定宽（同主站 .sgx-tb-tab）：每格最小 88px、左右 16px，三格等宽 */
@@ -1067,39 +1077,6 @@
 }
 
 
-/* ===== 留言板（_default/guestbook.html）：一张 One UI 卡片（同专题卡 .series-card 的材质、圆角、阴影），里面说明 + Giscus ===== */
-.guestbook-wrap {
-  --blog-col-max: 820px;
-}
-
-.guestbook-card {
-  padding: 18px 16px 8px;
-  border: 1px solid var(--sgx-outline-variant);
-  border-radius: var(--oui-radius-card, 28px);
-  background: var(--sgx-mat);
-  box-shadow: var(--oui-shadow-card);
-  color: var(--sgx-text-primary);
-}
-
-.guestbook-note {
-  margin: 0 4px 14px;
-  color: var(--sgx-text-secondary);
-  font-family: var(--font-ui);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.guestbook-giscus {
-  min-height: 240px;
-}
-
-.guestbook-giscus .giscus,
-.guestbook-giscus .giscus-frame {
-  width: 100%;
-  border: 0;
-}
-
-
 /* ===== 标签页（_default/term.html） ===== */
 .page-tag main {
   width: min(100%, var(--layout-shell-width));
@@ -1121,7 +1098,7 @@
 
 /* ===== 页面外框 = 外壳框（主站一比一，主站 layout 层 .home-wrap / .set-layout 等）=====
    宽 = --sgx-shell-w、不加横向内边距：手机上左右边线就是顶栏两侧圆的外缘（16px 页边距）；宽屏时内容列在框里居中，按页最宽
-   （列表 / 标签 1104、文章 1018、留言板 820）。顶部第一块内容从 --oui-nav-clear（= 主站 --sgx-content-top）开始。 */
+   （列表 / 标签 1104、文章 1018）。顶部第一块内容从 --oui-nav-clear（= 主站 --sgx-content-top）开始。 */
 .page-home main,
 .page-tag main,
 .oui-archive-wrap,
