@@ -1,10 +1,10 @@
 // 2026-10-20 沉浸式 app 顶栏验收（不截图，只断言行为和布局）：
-// - 顶栏三块：九宫格 · 长条 · 右胶囊（分享 + 留言板 /guestbook/，2026-10-24）；没有 ‹ 返回、没有 ⋮，没有版权页脚。
+// - 顶栏三块：九宫格 · 长条 · 右圆分享（2026-10-24 留言板撤了）；没有 ‹ 返回、没有 ⋮，没有版权页脚。
 // - 列表页长条 = 分段滑块 首页 · 文章 · 专题（没有归档）：点、滑、键盘切换，hash 记住页签。
 // - 指示器 = 抽屉当前项同一套 tonal（--sgx-nav-selected，同主站顶栏三栏 .sgx-tb-tab）；阅读进度 = 填充档（--sgx-accent = --sgx-primary-fill）；
 //   都跟 sgx-ui cookie 的 pal / 自定义种子 accent 变；抽屉当前项 / 目录当前节是 tonal。
 // - 九宫格 → 左侧导航抽屉（主站共享外壳同一份：主站 / 奇趣 / 日刻 / 博客，字标 + 头像、底栏搜索框，毛玻璃、tonal 当前项）；文章页抽屉最下面是目录。
-// - 只有列表页（首页）长条是 首页 · 文章 · 专题；其他页（文章、标签、404、留言板）长条只有页名；文章页长条底边一条强调色细线是阅读进度。
+// - 只有列表页（首页）长条是 首页 · 文章 · 专题；其他页（文章、标签、404）长条只有页名；文章页长条底边一条强调色细线是阅读进度。
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
@@ -80,16 +80,13 @@ async function expectTab(page, id) {
 
 test.describe('顶栏', () => {
   for (const path of ['/', '/en/', ARTICLE, '/tags/ai/', '/404.html']) {
-    test(`${path}：九宫格 + 长条 + 右胶囊（分享 + 留言板），没有 ‹ 和 ⋮，没有页脚`, async ({ page }) => {
+    test(`${path}：九宫格 + 长条 + 右圆分享，没有 ‹ 和 ⋮，没有页脚`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('.sgx-topbar > *')).toHaveCount(3);
       await expect(page.locator('.sgx-topbar > .sgx-tb-nav')).toHaveCount(1);
       await expect(page.locator('.sgx-topbar > .sgx-tb-pill')).toHaveCount(1);
-      await expect(page.locator('.sgx-topbar > .sgx-tb-end-group > a.sgx-tb-guestbook')).toHaveAttribute(
-        'href',
-        path.startsWith('/en/') ? '/en/guestbook/' : '/guestbook/',
-      );
-      await expect(page.locator('.sgx-topbar > .sgx-tb-end-group > button[data-sgx-share]')).toHaveCount(1);
+      await expect(page.locator('.sgx-topbar > button.sgx-tb-end[data-sgx-share]')).toHaveCount(1);
+      await expect(page.locator('.sgx-tb-end-group, .sgx-tb-guestbook, a[href*="guestbook"]')).toHaveCount(0);
       await expect(page.locator('.sgx-tb-me, footer, .oui-footer')).toHaveCount(0);
       await expect(
         page.locator('[data-sgx-back], .sgx-tb-back, [data-sgx-more], .sgx-tb-more'),
@@ -544,7 +541,7 @@ test.describe('文章页：页名 + 进度细线 + 抽屉目录', () => {
   });
 
   test('非文章页：抽屉里没有目录、长条没有进度线；首页三页签，其他页只有页名', async ({ page }) => {
-    for (const [path, name] of [['/', null], ['/tags/ai/', 'AI'], ['/404.html', '页面不存在'], ['/guestbook/', '留言板']]) {
+    for (const [path, name] of [['/', null], ['/tags/ai/', 'AI'], ['/404.html', '页面不存在']]) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('.sgx-drawer-toc, [data-sgx-progress]')).toHaveCount(0);
       if (name === null) {
@@ -556,46 +553,7 @@ test.describe('文章页：页名 + 进度细线 + 抽屉目录', () => {
     }
   });
 
-  test('留言板：右胶囊的留言板进 /guestbook/，卡片里插入共用 Giscus（specific term=guestbook、输入框在上、主题跟深浅色）；英文页 lang=en', async ({ page }) => {
-    const dark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
-    const giscus = [];
-    await page.route('https://giscus.app/**', (r) => {
-      giscus.push(r.request().url());
-      return r.fulfill({ status: 200, contentType: 'text/javascript', body: '' });
-    });
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.locator('.sgx-topbar .sgx-tb-guestbook').click();
-    await expect(page).toHaveURL(/\/guestbook\/$/);
-    await expect(page.locator('.sgx-topbar .sgx-tb-guestbook')).toHaveAttribute('aria-current', 'page');
-    await expect(page.locator('.guestbook-card')).toBeVisible();
-    const s = page.locator('[data-giscus] script[src="https://giscus.app/client.js"]');
-    await expect(s).toHaveCount(1);
-    for (const [k, v] of [
-      ['data-repo', 'styrigx/styrigx'],
-      ['data-repo-id', 'R_kgDOVDhNiA'],
-      ['data-category', 'Announcements'],
-      ['data-category-id', 'DIC_kwDOVDhNiM4DJVrs'],
-      ['data-mapping', 'specific'],
-      ['data-term', 'guestbook'],
-      ['data-strict', '0'],
-      ['data-reactions-enabled', '1'],
-      ['data-input-position', 'top'],
-      ['data-lang', 'zh-CN'],
-      ['data-theme', dark ? 'dark' : 'light'],
-    ]) {
-      await expect(s, k).toHaveAttribute(k, v);
-    }
-    expect(giscus.length).toBeGreaterThan(0);
-    const box = await page.locator('.guestbook-card').boundingBox();
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize().width);
-    await page.goto('/en/guestbook/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await expect(page.locator('.sgx-tb-pill .sgx-tb-title')).toHaveText('Guestbook');
-    await expect(page.locator('[data-giscus] script')).toHaveAttribute('data-lang', 'en');
-  });
-
-  test('文章页没有评论区了（改成留言板）', async ({ page }) => {
+  test('文章页没有评论区', async ({ page }) => {
     await page.route('https://giscus.app/**', (r) => r.fulfill({ status: 204 }));
     await page.goto(ARTICLE, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('.comment-section, [data-comment-provider], [data-giscus], iframe.giscus-frame')).toHaveCount(0);
