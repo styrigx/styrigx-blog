@@ -46,7 +46,7 @@
 {{- $css := resources.Get "css/main.css" -}}
 {{- if not $css }}{{ errorf "web/assets/css/main.css 不存在：先跑 node scripts/build-css.mjs（Tailwind 4 CLI）" }}{{ end }}
 <link rel="stylesheet" href="{{ ($css | minify | fingerprint).RelPermalink }}">
-{{- /* 锁屏同步：主站「立即锁定」后，切回博客标签页时问一次 /api/session-check（网关），失效就跳主站锁屏 */}}
+{{- /* 锁屏同步：主站「立即锁定」后，切回博客标签页时问一次 /api/lock-session-check（网关），失效就跳主站锁屏 */}}
 {{- $lock := resources.Get "js/blog/sgx-lock-check.js" | minify | fingerprint }}
 <script src="{{ $lock.RelPermalink }}" defer></script>
 {{- $pal := index hugo.Data "sgx-shell" "palettes" -}}

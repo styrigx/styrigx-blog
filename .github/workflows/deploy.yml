@@ -25,7 +25,7 @@ jobs:
         # 不许出现任何密钥变量名或会话 cookie 验签代码；web/static/_worker.js 只做 pages.dev 跳回。
         run: |
           if [ -e functions ] || [ -e web/static/functions ]; then echo "FAIL: functions/ must not exist (auth lives in the gateway)"; exit 1; fi
-          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-verified" web/static web/assets web/layouts --include="*.js" --include="*.mjs" --include="*.ts" --include="*.html"; then
+          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-lock-session" web/static web/assets web/layouts --include="*.js" --include="*.mjs" --include="*.ts" --include="*.html"; then
             echo "FAIL: blog must not hold keys or verify sessions"; exit 1
           fi
           echo "OK: zero-key Pages."
