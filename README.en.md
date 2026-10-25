@@ -22,7 +22,7 @@ Take it apart, then put it back together.
 
 The blog sub-site of Styrigx's Space: notes on AI tools, open-source project retrospectives and self-built infrastructure. The interface is Styrigx UI, designed in-house and shared with the main site: the same floating top bar, navigation drawer, colours and appearance (the shared shell is synced from the main site). The site is generated with Hugo (migrated from Astro / Navfolio in Oct 2026 with every URL unchanged), the same stack as the main site.
 
-The blog only does posts, built as an immersive app: the nine-dot button on the left opens the navigation drawer (Main site / Curio / Daymark / Blog, same as the main site; on a post its lower section is the table of contents), the middle bar is a segmented slider Home · Posts · Topics on the list page (tap, swipe or arrow keys) and just the page name elsewhere, the share button sits on the right (the owner gets a short link with a temporary session, visitors share the page). Language, light/dark and colors are set on the main site and the blog follows.
+The blog only does posts, built as an immersive app: the nine-dot button on the left opens the navigation drawer (Main site / Curio / Daymark / Blog, same as the main site; on a post its lower section is the table of contents), the middle bar is a segmented slider Home · Posts · Topics on the list page (tap, swipe or arrow keys) and just the page name elsewhere, the share button sits on the right (the admin gets a short link with a temporary session, visitors share the page). Language, light/dark and colors are set on the main site and the blog follows.
 
 ## What it does
 

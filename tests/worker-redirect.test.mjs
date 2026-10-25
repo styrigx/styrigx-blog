@@ -29,5 +29,5 @@ test('本站不再持有任何钥匙或验票代码', async () => {
   const { readFileSync, existsSync } = await import('node:fs');
   assert.equal(existsSync(new URL('../functions', import.meta.url)), false, 'functions/ 不应存在');
   const src = readFileSync(new URL('../web/static/_worker.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(src, /SGX_|sgx-verified|crypto\.subtle/);
+  assert.doesNotMatch(src, /SGX_|sgx-lock-session|crypto\.subtle/);
 });
