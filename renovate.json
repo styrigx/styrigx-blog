@@ -1,0 +1,10 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>styrigx/styrigx-space//.github/renovate-preset"],
+  "description": "错峰：主站周一，子站各占一天（本仓库周四），避免同一天集中跑 CI。GitHub Actions 归 .github/dependabot.yml 管，这里明确关掉 Renovate 的 github-actions manager，免得两边对同一个 action 各开一个 PR",
+  "schedule": ["* 0-23 * * 4"],
+  "automergeSchedule": ["* 0-23 * * 4"],
+  "github-actions": {
+    "enabled": false
+  }
+}
