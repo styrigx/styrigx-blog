@@ -73,7 +73,7 @@ Pushing to main makes GitHub Actions build, check the shared shell and code colo
 - `web/content/`: posts, split into `zh/` and `en/`.
 - `web/hugo.yaml`: site config (URL rules, languages, feeds); `web/i18n/`: UI strings.
 - `web/layouts/`: templates and components (top bar, tabs, cards, article, TOC, series, share, related posts, code blocks).
-- `web/assets/css/`, `web/assets/js/`: styles and scripts. `sgx-shell.css`, `js/sgx/shell/` and `web/data/sgx-shell/` are copies of the main site's shared shell: sync with `npm run shell:sync`, never edit by hand (version pinned in `sgx-shell.lock.json`).
+- `web/assets/css/`, `web/assets/js/`: styles and scripts. `sgx-shell.css`, `js/sgx/shell/` (including the read-only `sgx-ui` cookie parser `ui-cookie-read.js`), `web/data/sgx-shell/` and `tests/fixtures/ui-cookie-contract.json` are copies of the main site's shared shell: sync with `npm run shell:sync`, never edit by hand (version pinned in `sgx-shell.lock.json`).
 - Lock screen: session checks live in the main site's auth gateway (`workers/auth-gateway` in styrigx-space); this Pages project serves static files only and holds no keys. `web/static/_worker.js` just redirects pages.dev to the canonical domain.
 - `web/static/`: files published as-is (`_headers`, `_redirects`, fonts, icons).
 - `scripts/`: CSS build, shared-shell sync, code colour generation, local static server, unified site search index (`build-search-index.mjs`: post titles + body text written to the main site search KV `site:blog`, uploaded by CI after deploying main).

@@ -49,6 +49,5 @@
 {{- /* 锁屏同步：主站「立即锁定」后，切回博客标签页时问一次 /api/lock-session-check（网关），失效就跳主站锁屏 */}}
 {{- $lock := resources.Get "js/blog/sgx-lock-check.js" | minify | fingerprint }}
 <script src="{{ $lock.RelPermalink }}" defer></script>
-{{- $pal := index hugo.Data "sgx-shell" "palettes" -}}
 {{- $scheme := resources.Get "js/sgx/shell/palette-scheme.js" | js.Build (dict "minify" hugo.IsProduction "target" "es2020" "format" "esm" "targetPath" "js/palette-scheme.js") | fingerprint -}}
-{{ partial "script.html" (dict "name" "inherit.ts" "params" (dict "schemeVersion" $pal.schemeVersion "schemeUrl" $scheme.RelPermalink)) }}
+{{ partial "script.html" (dict "name" "inherit.ts" "params" (dict "schemeUrl" $scheme.RelPermalink)) }}

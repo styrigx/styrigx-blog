@@ -28,12 +28,9 @@
 `--sgx-accent` / `--sgx-on-accent`：列表页分段滑块的指示器、导航抽屉的当前项、文章页长条底边的阅读进度细线、抽屉目录的当前节、
 专题里选中的筛选芯片、文章的「第 n / N 篇」徽标。
 
-## 和主站契约的已知出入（待收敛）
+## 和主站契约一致
 
-博客读端目前是自己写的，和主站契约有这些出入，收敛到共享读端是后续任务：
-
-- 不校验版本 `v`；
-- 还认 `theme` 作为 `mode` 的别名；
-- `accent` 大写也接受（契约只认小写 `#rrggbb`）；
-- 不认 `LEGACY_SEEDS`（PR-G 之前的旧预设种子会被当成自定义色）；
-- 自定义色用 `data-sgx-seed` 而不是内联 `--sgx-seed`；不写 `data-theme-mode`、`data-dark`、`data-font-size`、`data-reduced-motion`。
+`sgx-inherit.html` 的第一个 `<script>` 就是主站共享读端 `ui-cookie-read.js` 原样（压缩后内联；副本在 `web/assets/js/sgx/shell/ui-cookie-read.js`，
+`npm run shell:sync` 同步、勿手改），外观全部由 `SgxUI.apply()` 落；博客脚本只补上面「博客自己加的」几项。
+`tests/sgx-inherit.test.mjs` 用主站契约夹具（副本 `tests/fixtures/ui-cookie-contract.json`，同样由 sync-shell 同步）逐条跑「共享读端 + 博客脚本」，
+每个用例在系统浅色 / 深色下 `<html>` 的状态都要和夹具一致。主站改了契约、本仓库跑一次 `npm run shell:sync`，单测就会按新夹具检查。
