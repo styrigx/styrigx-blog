@@ -1,5 +1,19 @@
 name: Build and Deploy to Cloudflare Pages
 
+# 同一分支推新提交时取消旧的 PR CI；main 的部署永不取消（排队按顺序跑：Pages 和 KV 里的 site:blog 索引不会被旧提交盖掉）
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# GITHUB_TOKEN 默认只读；本工作流不推代码、不发评论、不建 release
+permissions:
+  contents: read
+
+# 构建环境（Hugo 版本与 extended、Node + npm 缓存、Playwright 浏览器 / CJK 字体缓存）用主站 styrigx-space 的共享 composite action，
+# 按固定 tag 引用（不跟主站 main），Renovate 在 styrigx-space 发新 tag 后开 PR 升级（见主站 .github/actions/README.md）。
+# 下面 env 里的 HUGO_VERSION 和 build-and-deploy 里跳过的「Setup Hugo (legacy)」是过渡残留，不决定 Hugo 版本
+#（共享 setup-hugo 会把 HUGO_VERSION 写进 $GITHUB_ENV 覆盖它），在 Renovate 接入补丁和本补丁都合入后由收尾补丁删掉。
+
 on:
   push:
     branches:
@@ -15,28 +29,36 @@ env:
 jobs:
   # 作业名保持 build-and-deploy 不变（分支保护的必需检查按这个名字认）
   build-and-deploy:
+    # runner 先不固定：视觉基线是在 ubuntu-latest 上生成的，update-snapshots.yml 和这里要一起换（收尾补丁里一起改）
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
 
       - name: Assert zero-key Pages
         # 博客的会话检查全在主站鉴权网关（styrigx-auth-gateway）。本仓库不许有 Pages Functions、
         # 不许出现任何密钥变量名或会话 cookie 验签代码；web/static/_worker.js 只做 pages.dev 跳回。
         run: |
           if [ -e functions ] || [ -e web/static/functions ]; then echo "FAIL: functions/ must not exist (auth lives in the gateway)"; exit 1; fi
-          if grep -rn -E "SGX_[A-Z]+_(PUBLIC|PRIVATE|KEY)|sgx-lock-session" web/static web/assets web/layouts --include="*.js" --include="*.mjs" --include="*.ts" --include="*.html"; then
+          # SGX_[A-Z0-9_]*(…)：连 SGX_PW_PEPPER、SGX_CHAT_API_KEY、SGX_ROOT_KEY 这类名字一起拦
+          if grep -rn -E "SGX_[A-Z0-9_]*(PUBLIC|PRIVATE|KEY|PEPPER)|sgx-lock-session" web/static web/assets web/layouts --include="*.js" --include="*.mjs" --include="*.ts" --include="*.html"; then
             echo "FAIL: blog must not hold keys or verify sessions"; exit 1
           fi
           echo "OK: zero-key Pages."
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Node (styrigx-space shared action, npm cache)
+        # npm ci 仍在下面的「Install dependencies」（过渡期保留原步骤，收尾补丁再交给共享 action）
+        uses: styrigx/styrigx-space/.github/actions/setup-node-deps@v1.0.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          install: 'false'
 
-      - name: Setup Hugo
+      - name: Setup Hugo (styrigx-space shared action; version + extended defined there)
+        uses: styrigx/styrigx-space/.github/actions/setup-hugo@v1.0.0
+
+      - name: Setup Hugo (legacy, skipped)
+        # 过渡残留：不执行（SGX_LEGACY_HUGO 从不设置），Hugo 由上一步装。原样保留只为和 Renovate 接入补丁任意顺序合并都不冲突，收尾补丁删除
+        if: env.SGX_LEGACY_HUGO == 'true'
         uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
@@ -54,8 +76,9 @@ jobs:
         # 每个分支都跑：网址和构建产物对不上 / 0 篇文章 → 红。文件写到 RUNNER_TEMP，不进 web/public（不随 Pages 发出去）。
         run: node scripts/build-search-index.mjs --out "$RUNNER_TEMP/search-index.blog.json"
 
-      - name: Shared shell copy matches lock / main site
-        # 共享外壳（主站 styrigx-space web/shared/shell）是唯一来源：副本不许手改，版本要和主站 main 一致
+      - name: Shared shell copy matches the pinned main-site commit
+        # 共享外壳（主站 styrigx-space web/shared/shell）是唯一来源：副本不许手改，且要和 sgx-shell.lock.json 锁定的主站提交一致；
+        # 主站 main 上外壳更新了只打 notice，不变红。升级：node scripts/sync-shell.mjs（锁定到主站 main 当时的提交）后提交
         run: node scripts/sync-shell.mjs --check
 
       - name: Code token colours are up to date
@@ -65,27 +88,81 @@ jobs:
         # 网址映射 / 订阅 / 锚点 / 网关路由 / 构建 CSS 毛玻璃 / 代码配色对比度 / sgx-ui cookie 继承 / 搜索索引
         run: npm test
 
-      - name: Install Playwright browsers and CJK fonts
-        run: |
-          npx playwright install chromium --with-deps
-          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+      - name: Playwright Chromium + CJK fonts (styrigx-space shared action, cached)
+        # 浏览器按 lockfile 的 @playwright/test 版本缓存；fonts-noto-cjk 缓存 apt 候选版本的 .deb，和直接 apt-get install 同一个版本
+        uses: styrigx/styrigx-space/.github/actions/setup-playwright@v1.0.0
+        with:
+          cjk-fonts: 'true'
 
       - name: Playwright (behaviour + visual regression)
         run: npm run test:e2e
 
       - name: Upload test artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: visual-test-results
           path: |
             test-results/
             playwright-report/
 
+      - name: Upload site build (main push only)
+        # 部署 job 直接用这份产物，不重建、不 npm ci、不跑 Playwright
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: site-public
+          path: web/public
+          retention-days: 1
+          if-no-files-found: error
+          include-hidden-files: true
+
+      - name: Upload search index (main push only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: search-index
+          path: ${{ runner.temp }}/search-index.blog.json
+          retention-days: 1
+          if-no-files-found: error
+
+  # 部署单独一个 job（只在 main 推送时跑）：不 npm ci、不跑 Playwright / 任何仓库依赖代码，只拿上面 job 的构建产物，
+  # 部署令牌也只在这个 job 里用到——build-and-deploy 里装依赖、跑测试的步骤碰不到它。
+  # 令牌 STYRIGX_BLOG_PAGES_DEPLOY 仍是仓库级 secret（Cloudflare Pages 部署 + Workers KV Storage: Edit，写 styrigx-search-index 的 site:blog）；
+  # 挪进只允许 main 的 GitHub 环境是可选的后续，不在这次。CLOUDFLARE_ACCOUNT_ID 不是钥匙，留在仓库级。
+  # 顺序：网关闸门 → Pages → KV 索引 → 冒烟。KV 写失败时页面已上线、搜索还是旧索引（只会搜不到新文章，不会搜出打不开的页面），job 报红，不回滚。
+  deploy:
+    needs: build-and-deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    env:
+      # 所有 wrangler 用同一个固定版本，和主站 styrigx-space 一致（以前 Pages 部署没写版本，用的是 wrangler-action 默认的 wrangler 3）
+      WRANGLER_VERSION: '4.152.0'
+    steps:
+      - name: Checkout
+        # 只为 .nvmrc 和冒烟脚本的工作目录；不 npm ci
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Node (wrangler only)
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Download site build
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: site-public
+          path: web/public
+
+      - name: Download search index
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: search-index
+          path: ${{ runner.temp }}
+
       - name: Gate check - gateway must already guard blog pages
         # 本站 Pages 没有验票代码，必须先确认网关已经挂在 blog.styrigx.com 上，否则部署后页面不设防。
         # 未登录访问首页必须是网关回的 302（带 X-SGX-Runtime: worker）。不满足就不部署。
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -u
           hdr=$(curl -sS -o /dev/null -D - -w 'HTTP_CODE:%{http_code}\n' https://blog.styrigx.com/ | tr -d '\r')
@@ -95,28 +172,26 @@ jobs:
           [ "$code" = "302" ] && [ "$rt" = "worker" ] || { echo "::error::gateway is not guarding blog.styrigx.com yet; deploy the gateway first"; exit 1; }
 
       - name: Deploy to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
         with:
           apiToken: ${{ secrets.STYRIGX_BLOG_PAGES_DEPLOY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           command: pages deploy web/public --project-name=styrigx-blog --commit-dirty=true
 
       - name: Upload search index to KV (site:blog)
         # 和 Pages 部署同一个令牌：STYRIGX_BLOG_PAGES_DEPLOY 需要额外带「Workers KV Storage: Edit」权限。
         # 命名空间 styrigx-search-index（主站 styrigx-space 的搜索 Worker 读它）。
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3.15.0
         with:
           apiToken: ${{ secrets.STYRIGX_BLOG_PAGES_DEPLOY }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: '4'
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           command: kv key put site:blog --path=${{ runner.temp }}/search-index.blog.json --namespace-id=bd1babcc3fe74d58994e254c74d34ced --remote
 
       - name: Smoke test - every page directory is behind the gateway
         # 只发不带 cookie 的只读请求。web/public/ 里每个页面所在的一级目录各抽一个页面，未登录必须是网关回的 302；
         # 新增页面目录忘了在网关 wrangler.toml 登记 → 这里红。静态资源（css/ js/ fonts/）不能过网关；pages.dev 不能直接打开。
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -u
           ok=0

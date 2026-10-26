@@ -13,6 +13,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    # styrigx-space 共享 CI action 的版本引用归 Renovate（共享预设 ④，styrigx-space-ci 一组），这里不管，免得两边各开一个 PR
+    ignore:
+      - dependency-name: 'styrigx/styrigx-space*'
     groups:
       ci-dependencies:
         applies-to: 'version-updates'
