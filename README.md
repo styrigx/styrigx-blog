@@ -32,7 +32,7 @@ Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复
 - 文章地址固定为 `/post/<slug>/`，改标题也不会变。
 - 文章页没有评论（旧评论留在本仓库 Discussions）。
 - RSS（`/rss.xml`、`/en/rss.xml`）和站点地图。
-- 外观和语言跟主站走：深浅色、调色板、强调色、字号、减弱动效、语言都从主站的 `sgx-ui` cookie 读，契约见 [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md)。
+- 外观和语言跟主站走：深浅色、调色板、强调色、字号、减弱动效、语言都从主站的 `sgx-ui` cookie 读。契约以主站为准，见 styrigx-space 的 [docs/ui-cookie-contract.md](https://github.com/styrigx/styrigx-space/blob/main/docs/ui-cookie-contract.md)；博客这一侧（在哪读、博客自己加的 `data-theme` / `lang`）见 [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md)。
 - 字体：界面和正文用 Inter + 系统中文字体；代码块用 Maple Mono（自托管）。代码块是一个容器，带语言 / 文件名 / 复制按钮、行号槽、`hl_lines` 高亮行，配色从主站色彩角色生成（`scripts/gen-code-tokens.mjs`，对比度有单测）。
 
 ## 写文章
@@ -73,12 +73,12 @@ npm run test:e2e   # Playwright 行为 + 视觉回归
 - `web/content/`：文章，`zh/` 和 `en/` 分开。
 - `web/hugo.yaml`：站点配置（网址规则、语言、订阅）；`web/i18n/`：界面文案。
 - `web/layouts/`：页面模板和组件（顶栏、页签、卡片、文章、目录、系列、分享、相关文章、代码块）。
-- `web/assets/css/`、`web/assets/js/`：样式和脚本；`sgx-shell.css`、`js/sgx/shell/`、`web/data/sgx-shell/` 是主站共享外壳的副本，用 `npm run shell:sync` 同步、勿手改（版本记在 `sgx-shell.lock.json`）。
+- `web/assets/css/`、`web/assets/js/`：样式和脚本；`sgx-shell.css`、`js/sgx/shell/`（含 sgx-ui cookie 只读解析器 `ui-cookie-read.js`）、`web/data/sgx-shell/`、`tests/fixtures/ui-cookie-contract.json` 是主站共享外壳的副本，用 `npm run shell:sync` 同步、勿手改（版本记在 `sgx-shell.lock.json`）。
 - 锁屏：会话检查全在主站鉴权网关（styrigx-space 仓库 `workers/auth-gateway`），本站 Pages 只放静态文件、不持任何钥匙；`web/static/_worker.js` 只把 pages.dev 跳回正式域名。
 - `web/static/`：原样发布的文件（`_headers`、`_redirects`、字体、图标）。
 - `scripts/`：CSS 构建、共享外壳同步、代码配色生成、本地静态服务器、全站搜索索引（`build-search-index.mjs`：文章标题 + 正文写进主站搜索的 KV `site:blog`，main 上部署后由 CI 上传）。
 - `tests/`：单元测试和视觉回归。视觉基线只在 CI 生成：在分支上手动跑 _Update visual snapshots_（`.github/workflows/update-snapshots.yml`）。
-- `docs/`：cookie 契约、系列写法。
+- `docs/`：sgx-ui cookie 博客这一侧的说明（契约本身在主站）、系列写法。
 
 ## 许可
 

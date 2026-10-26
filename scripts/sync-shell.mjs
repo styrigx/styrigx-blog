@@ -36,6 +36,9 @@ const SITE = {
     /* 导航抽屉项 + 图标（partials/topnav.html）、预设种子 + 引擎版本（partials/sgx-inherit.html） */
     { path: 'web/data/sgx-shell/nav.json', kind: 'json', parts: ['nav.json'] },
     { path: 'web/data/sgx-shell/palettes.json', kind: 'json', parts: ['palettes.json'] },
+    /* sgx-ui cookie 只读解析器（partials/sgx-inherit.html 原样内联进 <head>，首帧前落外观）+ 契约夹具（tests/sgx-inherit.test.mjs 逐条跑） */
+    { path: 'web/assets/js/sgx/shell/ui-cookie-read.js', kind: 'file', parts: ['ui-cookie-read.js'] },
+    { path: 'tests/fixtures/ui-cookie-contract.json', kind: 'json', parts: ['ui-cookie-contract.json'] },
   ],
 };
 /* ---- /__SITE_CONFIG__ ---- */
