@@ -32,7 +32,7 @@ The blog only does posts, built as an immersive app: the nine-dot button on the 
 - Post URLs are fixed at `/post/<slug>/`, so they survive a title change.
 - Posts have no comments (old ones stay in this repo's Discussions).
 - RSS (`/rss.xml`, `/en/rss.xml`) and a sitemap.
-- Follows the main site: light/dark, palette, accent color, font size, reduced motion and language come from the main site's `sgx-ui` cookie; contract in [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md) (Chinese).
+- Follows the main site: light/dark, palette, accent color, font size, reduced motion and language come from the main site's `sgx-ui` cookie. The main site owns the contract: [docs/ui-cookie-contract.md](https://github.com/styrigx/styrigx-space/blob/main/docs/ui-cookie-contract.md) in styrigx-space (Chinese); the blog side (where it is read, the blog-only `data-theme` / `lang`) is in [docs/sgx-ui-cookie.md](docs/sgx-ui-cookie.md) (Chinese).
 - Fonts: Inter + system CJK fonts for UI and body text; Maple Mono (self-hosted) for code only. Code blocks are a single container with language / filename / copy button, a line-number gutter and `hl_lines`; token colours are generated from the main site's colour roles (`scripts/gen-code-tokens.mjs`, contrast is unit-tested).
 
 ## Writing a post
