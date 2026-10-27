@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
 
 env:
-  HUGO_VERSION: 0.168.0
+  HUGO_VERSION: '0.168.0'
 
 jobs:
   # 作业名保持 build-and-deploy 不变（分支保护的必需检查按这个名字认）
@@ -62,7 +62,7 @@ jobs:
         uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          extended: false
+          extended: true
 
       - name: Install dependencies
         run: npm ci

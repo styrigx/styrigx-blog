@@ -10,7 +10,7 @@ permissions:
   contents: write
   actions: write # 推完基线后用 GITHUB_TOKEN 触发 deploy.yml
 env:
-  HUGO_VERSION: 0.168.0
+  HUGO_VERSION: '0.168.0'
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
       - uses: peaceiris/actions-hugo@v3
         with:
           hugo-version: ${{ env.HUGO_VERSION }}
-          extended: false
+          extended: true
       - run: npm ci
       - name: Build site
         run: npm run build
