@@ -10,6 +10,7 @@
 
 ![Hugo](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/styrigx/styrigx-space/main/.github/actions/setup-hugo/action.yml&query=%24..HUGO_VERSION&label=Hugo&style=flat-square&color=2563eb&logo=hugo)
 ![Tailwind CSS](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/styrigx/styrigx-blog/main/package.json&query=%24.devDependencies.tailwindcss&label=Tailwind%20CSS&style=flat-square&color=2563eb&logo=tailwindcss)
+![Styrigx UI](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/styrigx/styrigx-space/main/web/data/version.yaml&query=%24.ui&label=Styrigx%20UI&style=flat-square&color=2563eb)
 ![Deploy](https://img.shields.io/github/actions/workflow/status/styrigx/styrigx-blog/deploy.yml?style=flat-square&label=Deploy&color=2563eb)
 ![License](https://img.shields.io/badge/License-MIT-2563eb?style=flat-square)
 ![Posts](https://img.shields.io/badge/Posts-CC%20BY--NC--SA%204.0-2563eb?style=flat-square)
@@ -20,7 +21,7 @@
 
 ## 这是什么
 
-Styrigx's Space 的博客子站，写 AI 工具的使用记录、开源项目复盘和自建的基础设施。界面是自研的 Styrigx UI，与主站同一套设计：悬浮顶栏、导航抽屉、配色和外观都跟随主站（共享外壳从主站同步）。站点用 Hugo 生成（2026-10 从 Astro / Navfolio 迁来，网址不变），和主站同一套技术栈。
+Styrigx's Space 的博客子站，写给自己的记录：AI 工具的使用记录、开源项目复盘和自建的基础设施。界面是自研的 Styrigx UI，与主站同一套设计：悬浮顶栏、导航抽屉、配色和外观都跟随主站（共享外壳从主站同步）。站点用 Hugo 生成（2026-10 从 Astro / Navfolio 迁来，网址不变），和主站同一套技术栈。
 
 博客只管文章，做成一个沉浸式 app：顶栏左边九宫格打开导航抽屉（主站 / 奇趣 / 日刻 / 博客，和主站同一套；文章页底部是目录），中间长条在列表页是分段滑块 首页 · 文章 · 专题（点、左右滑、方向键都能切），其他页只有页名，右边是分享按钮（管理员生成带临时会话的短链，访客分享当前页）。语言、深浅色、配色都在主站设置，博客跟着走。
 
@@ -84,6 +85,6 @@ npm run test:e2e   # Playwright 行为 + 视觉回归
 
 代码 MIT。设计、Styrigx UI 与站点代码 © Sloan Gray；沿用的 Navfolio 模板样式代码 © dodolalorc，按 MIT 要求保留其版权声明。文章和图片采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)，不属于 MIT。
 
-站点生成：[Hugo](https://gohugo.io)；早期版本基于 [Navfolio](https://github.com/navfolio)。
+站点生成：[Hugo](https://gohugo.io)；早期版本基于 [Navfolio](https://github.com/dodolalorc/astro-navfolio)。
 
 © 2026 Sloan Gray · Powered by Styrigx UI

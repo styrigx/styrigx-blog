@@ -10,6 +10,7 @@ Take it apart, then put it back together.
 
 ![Hugo](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/styrigx/styrigx-space/main/.github/actions/setup-hugo/action.yml&query=%24..HUGO_VERSION&label=Hugo&style=flat-square&color=2563eb&logo=hugo)
 ![Tailwind CSS](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/styrigx/styrigx-blog/main/package.json&query=%24.devDependencies.tailwindcss&label=Tailwind%20CSS&style=flat-square&color=2563eb&logo=tailwindcss)
+![Styrigx UI](https://img.shields.io/badge/dynamic/yaml?url=https://raw.githubusercontent.com/styrigx/styrigx-space/main/web/data/version.yaml&query=%24.ui&label=Styrigx%20UI&style=flat-square&color=2563eb)
 ![Deploy](https://img.shields.io/github/actions/workflow/status/styrigx/styrigx-blog/deploy.yml?style=flat-square&label=Deploy&color=2563eb)
 ![License](https://img.shields.io/badge/License-MIT-2563eb?style=flat-square)
 ![Posts](https://img.shields.io/badge/Posts-CC%20BY--NC--SA%204.0-2563eb?style=flat-square)
@@ -20,7 +21,7 @@ Take it apart, then put it back together.
 
 ## What is this
 
-The blog sub-site of Styrigx's Space: notes on AI tools, open-source project retrospectives and self-built infrastructure. The interface is Styrigx UI, designed in-house and shared with the main site: the same floating top bar, navigation drawer, colours and appearance (the shared shell is synced from the main site). The site is generated with Hugo (migrated from Astro / Navfolio in Oct 2026 with every URL unchanged), the same stack as the main site.
+The blog sub-site of Styrigx's Space: a record kept for himself — notes on AI tools, open-source project retrospectives and self-built infrastructure. The interface is Styrigx UI, designed in-house and shared with the main site: the same floating top bar, navigation drawer, colours and appearance (the shared shell is synced from the main site). The site is generated with Hugo (migrated from Astro / Navfolio in Oct 2026 with every URL unchanged), the same stack as the main site.
 
 The blog only does posts, built as an immersive app: the nine-dot button on the left opens the navigation drawer (Main site / Curio / Daymark / Blog, same as the main site; on a post its lower section is the table of contents), the middle bar is a segmented slider Home · Posts · Topics on the list page (tap, swipe or arrow keys) and just the page name elsewhere, the share button sits on the right (the admin gets a short link with a temporary session, visitors share the page). Language, light/dark and colors are set on the main site and the blog follows.
 
@@ -83,6 +84,6 @@ Pushing to main makes GitHub Actions build, check the shared shell and code colo
 
 Code is MIT. Design, Styrigx UI and site code © Sloan Gray; the Navfolio template styles still in use © dodolalorc, whose copyright notice is kept as MIT requires. Posts and images are licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), not MIT.
 
-Generated with [Hugo](https://gohugo.io); earlier versions were built on [Navfolio](https://github.com/navfolio).
+Generated with [Hugo](https://gohugo.io); earlier versions were built on [Navfolio](https://github.com/dodolalorc/astro-navfolio).
 
 © 2026 Sloan Gray · Powered by Styrigx UI
